@@ -1,0 +1,124 @@
+
+    <br />
+    <label>Choose cryptocurrency <select id="currencySelect" name="currencySelect" onchange="insertCryptoName(this);">
+            <% if (locals.list) {
+
+            for (var i = 0; i < list.length; i++) { %>
+            <option value="<%=list[i].id%>"><%=list[i].name%></option>
+            <% }
+            } %>
+        </select>
+    </label>
+    <br />
+    <a class="addNewLink" href="#" onclick="showAddCryptoBlock(event)">Can't find needed cryptocurrency? Add new!</a>
+    <div id="addNewCrypto">
+        <label>
+            Enter cryptocurrency full name
+            <input type="text" id="newCrypto" placeholder="Enter cryptocurrency full name">
+        </label>
+        <br />
+        <label>
+            Enter shortcode (BTC, XCP, ETH etc)
+            <input type="text" id="shortCrypto" placeholder="Enter shortcode of cryptocurrency">
+        </label>
+        <br />
+        <label>
+            Is divided?
+            <input type="checkbox" id="isDivided" name="isDivided" />
+        </label>
+        <br />
+        <input type="button" id="addCryptoButton" value="Add new cryptocurrency" onclick="addNewCryptoForm()" />
+    </div>
+
+
+    <div id="offerDetail">
+        <Br />
+        <label>
+            Choose fiat currency you want to receive
+            <select id="fiatCurrencySelect" name="fiatCurrencySelect" onchange="insertFiatName(this);">
+                <% if (locals.fiatList) {
+
+                for (var i = 0; i < fiatList.length; i++) { %>
+                <option value="<%=fiatList[i].id%>"><%=fiatList[i].name%></option>
+                <% }
+                } %>
+            </select>
+        </label>
+
+        <br />
+        <label>
+            Enter your deposite maximum in <span id="selectedCrypto2">choosed cryptocurrency</span> (how much you have <span id="selectedCrypto"></span>)
+            <input type="text" id="depositeMax" placeholder="Enter your maximum possible deposite">
+        </label>
+
+
+        <br />
+        <label>
+            How much (<span id="selectedFiat"></span>) you want to receive for 1 <span id="selectedCrypto3"></span> <!-- [ popup in question icon] e.g. for 1 coin you want to receive 150 USD -->(input only digits)
+            <input type="text" id="howMuchReceiveFiat" placeholder="Enter needed amount for 1 coin">
+        </label>
+        <div id="comissionCalculation"></div>
+
+        <label>
+            Can users buy only all your deposite? (can't divide)
+            <input type="checkbox" id="canUserDivideOffer" name="canUserDivideOffer" />
+        </label>
+
+        <br />
+        <label>
+            Choose country, where you want to sell
+            <select id="countriesList" name="countriesList">
+                <% if (locals.countries) {
+
+                for (var i = 0; i < countries.length; i++) {
+                if (locals.countryId == countries[i].id) { %>
+                <option value="<%=countries[i].id%>" selected><%=countries[i].country_name%></option>
+                <% } else { %>
+                <option value="<%=countries[i].id%>"><%=countries[i].country_name%></option>
+                <% }
+                }
+                } %>
+            </select>
+        </label>
+
+        <br />
+        <p>Choose payment methods you accept</p>
+        <label>
+            Bank payment
+            <input type="checkbox" id="checkBankPayment" name="checkBankPayment" />
+        </label>
+        <label>
+            Personal meeting
+            <input type="checkbox" id="checkPersonalMeeting" name="checkPersonalMeeting" />
+        </label>
+        <label>
+            Exchange on other cryptocurrencies
+            <input type="checkbox" id="checkOtherCoins" name="checkOtherCoins" />
+        </label>
+        <label>
+            Payment via PayPal/Stripe etc
+            <input type="checkbox" id="checkPaypal" name="checkPaypal" />
+        </label>
+
+        <br />
+
+        <label>
+            Enter short title of this offer (140 symbols max)
+            <input type="text" id="titleOffer" name="titleOffer" />
+        </label>
+        <br />
+        <label>
+            Enter description of this offer (1500 symbols max)
+            <textarea name="offerDescription" id="offerDescription"></textarea>
+        </label>
+        <br />
+        <% if (locals.userEmail == false) { %>
+        <label>
+            Enter your email, you will receive confirmation link
+            <input type="text" id="userEmail" name="userEmail" />
+        </label>
+        <br />
+        <% } %>
+        <p>Thank you for filling this data, click Post Offer below.</p> <br />
+        <input type="button" onclick="sendSellOffer('<%= locals.userEmail %>');" id="postOfferButton" value="Post Offer" />
+    </div>

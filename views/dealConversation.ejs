@@ -1,0 +1,81 @@
+<% include headers/baseHeader.ejs %>
+<script src="/js/_dealConversationController.js"></script>
+
+<div id='topMenu'></div>
+
+<section class="baseListing">
+<section class="chat">
+    <div class="chatDiv">
+        <ul id="socketChatUl" class="chatUl">
+            <% if (locals.messagesArr && locals.messagesArr.length > 0) {
+                messagesArr.forEach(function (element) { %>
+                <% try {
+                    element = JSON.parse(element);
+                    var formattedDate = new Date(element.date).toLocaleDateString("de-CH");
+                    var formattedTime = new Date(element.date).toLocaleTimeString("de-CH");
+                } catch (e) {
+                    return;     // go to next iteration
+                } %>
+                    <li>
+                    <div>Time: <%= formattedDate %>, <%= formattedTime %></div>
+                        <div>
+                            <div>From: Anonymous<%= element.userId %></div>
+                            <div><b><%= element.text %></b></div>
+                        </div>
+                    </li>
+            <%   })
+            } else { %>
+            <li>No messages yet.</li>
+            <% } %>
+        </ul>
+    </div>
+    <br /><br />
+    <% if (locals.chatIsClosed == false) { %>
+    <div id="sendChatForm">
+        <textarea name="chatMessage" id="chatMessage"></textarea> <br /><br />
+        <input type="button" class="actionButtonInside" name="textMessage" value="Send message" onclick="sendChatMessage(<%= locals.dealId %>)" id="sendChatMessageButton" />
+    </div>
+<br /><br />
+    <% } %>
+    <% if (locals.isUserBueyr && locals.isUserBueyr == true && locals.isDealClosed == false) {  %>
+    <div id="completeTransaction">
+        <p>Warning message.</p>
+        <input type="button" onclick="closeDeal(<%= locals.dealId %>)" value="Complete transaction" class="actionButtonInside" />
+    </div>
+    <% } else if (locals.isDealClosed == true)  { %>
+    <div id="completeTransaction">
+        <p><b>Transaction success complete!</b></p>
+    </div>
+
+    <% if (dealObj.wasReviewed == 0) { %>
+    <div id="reviewsDiv">        <br />
+    <p>Review this user? How did your transaction go?</p>
+    <form method="post" onsubmit="submitReview(event, <%= locals.dealId %>)">
+        <span>Type your review:</span>  <br />
+        <textarea name="textReview" id="textReview" required rows="4" cols="50" placeholder="Type your review here">
+</textarea>
+        <br />
+        <span>Please review in stars (5 - best service, 1 - bad service):</span>  <br />
+        <input type="number" min="1" max="5" id="stars" name="stars" value="5" required>  <br />
+
+        <input type="submit" value="Send review">
+    </form>
+    </div>
+    <% } } else { %>
+    <div id="completeTransaction">
+        <p>Transaction is in progress.</p>
+    </div>
+    <% } %>
+</section>
+</section>
+
+<script>
+    var isUserBueyr = <%=locals.isUserBueyr %>;
+
+    $(document).ready(function() {
+        canUserReview(<%= locals.dealId %>);
+    });
+</script>
+
+
+<% include footers/baseFooter.ejs %>

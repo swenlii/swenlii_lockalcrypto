@@ -1,0 +1,42 @@
+<% include headers/baseHeader.ejs %>
+<script src="/js/fMyDealsController.js"></script>
+
+<div id='topMenu'></div>
+
+<section class="baseListing">
+    <div class="headListing">
+        <span>Fiat amount</span>
+        <span>CryptoCurrency amount</span>
+        <span>Initate date</span>
+        <span>Status</span>
+        <span>Action</span>
+    </div>
+
+<%
+    if (locals.dealsList) {
+
+    dealsList.forEach(function (oneDeal) {
+        var status = "Open";
+        if (oneDeal.deal_is_closed == 1) {
+            status = "<b>Completed</b>";
+        }
+     %>
+
+    <div class="classicListing">
+        <span><%=oneDeal.info_fiat_amount%> <%=oneDeal.fiat_code%></span>
+        <span><%=oneDeal.crypto_amount%> <%=oneDeal.cryptoname%></span>
+        <span><%=oneDeal.fDate%></span>
+        <span><%-status%></span>
+        <span><a href="/deals/<%=oneDeal.dealId%>/">Open conversation</a></span>
+    </div>
+
+
+<%  });
+}
+%>
+</section>
+
+
+
+
+<% include footers/baseFooter.ejs %>

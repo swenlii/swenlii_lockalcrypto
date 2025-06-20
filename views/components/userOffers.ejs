@@ -1,0 +1,85 @@
+<script>
+    var userOffers = Vue.component('user-offers', ({
+        name: 'user-offers',
+        props: ['userObj', 'offersArr'],
+        template: `<% include userOffers.vue %>`,
+
+        data: function () {
+            return {
+                moment: moment,
+                pathName: location.href.split('#')[0],
+            }
+        },
+
+        methods: {
+            typeSymbol(event) {
+                if(event.key == '.') {
+                    if(event.target.value.length === 0 || event.target.value.includes('.')) {
+                        event.preventDefault()
+                    }
+                } else if (!(event.key in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'])) {
+                    event.preventDefault()
+                }
+
+            },
+            saveNewDeposit(index, id) {
+                var newDeposit = document.getElementById('deposit' + id).value;
+
+                if(newDeposit < 0 || isNaN(parseFloat(newDeposit)) || !isFinite(newDeposit)) {
+
+                    swal("<%=_lt.get('Error')%>", "<%=_lt.get('Sorry, the deposit number')%>", 'error')
+                } else {
+
+                    offerObj = {
+                        id: id,
+                        deposite: newDeposit
+                    }
+
+                    socket.emit('saveNewDeposit', offerObj, (error, success) => {
+                        if (error) {
+
+                            swal("<%=_lt.get('Error')%>", error, 'error')
+                        } else {
+
+                            swal("<%=_lt.get('Success')%>", "<%=_lt.get('Thank you deposit updated!')%>", 'success')
+                        }
+                    })
+                }
+            },
+
+            deleteOffer(id, isOpenDeal) {
+                Swal.fire({
+                    title: "<%=_lt.get('Are you sure delete offer?')%>",
+                    text: "<%=_lt.get('You wont revert this!')%>",
+                    type: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#808080',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: "<%=_lt.get('Yes, delete it!')%>"
+                }).then((result) => {
+                    if (result.value) {
+                        if(isOpenDeal !== 0) {
+                            socket.emit('deleteOffer', id, (error, success) => {
+                                if (error) {
+
+                                    swal("<%=_lt.get('Error')%>", error, 'error')
+                                } else {
+
+                                    swal("<%=_lt.get('Success')%>", "<%=_lt.get('Your offer has been deleted')%>", 'success')
+                                        .then(answer => {
+                                            const newOffersArr = this.offersArr.filter((item) => {
+                                                return item.id !== id
+                                            })
+                                            this.offersArr = newOffersArr;
+                                        })
+                                }
+                            })
+                        } else {
+                            swal("<%=_lt.get('Error')%>", "<%=_lt.get('Removal is not possible')%>", 'error')
+                        }
+                    }
+                })
+            }
+        }
+    }));
+</script>

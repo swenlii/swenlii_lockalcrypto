@@ -1,0 +1,397 @@
+<script>
+
+    socket.on("updatePaymentStatus", function (socketObj) {
+        console.log('i am receive message! updatePaymentStatus:', socketObj);
+        if (socketObj.what) {
+            drawProcessingPaymentDiv(socketObj);
+        }
+        if (socketObj.what && socketObj.dealIds && socketObj.what === 'confirmed') {
+            try {
+                var dealIds = JSON.parse(socketObj.dealIds)
+                dealIds.forEach(function (oneDeal) {
+                    $("#obStatus"+oneDeal).text('Paid');
+                })
+            } catch (e) {
+                throw new Error(e);
+            }
+        }
+    });
+
+    function drawProcessingPaymentDiv(socketObj) {
+        let div = '';
+        if (socketObj.what === 'created') {
+                $("#possilbleOpacityPayButton").css('opacity', '0.3');
+
+                div = `<div id="p${socketObj.id}">
+                <div><%=_lt.get('Generated invoice number')%> <b id="invSmallNumber${socketObj.id}">${socketObj.id}</b></div>
+                <div><%=_lt.get("Status:")%> <b><%=_lt.get("Generated and waiting payment")%></b></div>
+                <div><%=_lt.get("We check your payment")%></div>
+                <div><%=_lt.get("You have 1 hour")%></div>
+                <div><%=_lt.get("Lost payment link")%>
+                    <b id="pLink${socketObj.id}">
+                        <a href="https://commerce.coinbase.com/checkout/${socketObj.coinbaseiD}" target="_blank">https://commerce.coinbase.com/checkout/${socketObj.coinbaseiD}</a>
+                    </b>
+                </div>
+            </div>`;
+
+                $(div).prependTo( "#processingInvoices" );
+
+        } else if (socketObj.what === 'confirmed') {
+            div = `<div><%=_lt.get("Generated invoice number")%> <b id="invSmallNumber${socketObj.id}">${socketObj.id}</b></div>
+                <div><%=_lt.get("Status:")%> <b><%=_lt.get("Paid!")%></b></div>`;
+
+            $("#p"+socketObj.id).html(div);
+
+        } else if (socketObj.what === 'expired') {
+            div = `<div><%=_lt.get("Generated invoice number")%> <b id="invSmallNumber${socketObj.id}">${socketObj.id}</b></div>
+                <div><%=_lt.get("Status:")%> <b><%=_lt.get("Expired and canceled")%></b></div>`;
+
+            $("#p"+socketObj.id).html(div);
+        }
+    }
+
+    var comissions = Vue.component('comissions', ({
+        name: 'comissions',
+        props: ['userObj'],
+        template: `<% include comissions.vue %>`,
+        data: function () {
+            return {
+                translate: {
+                    estimatePrice: "<%=_lt.get('Estimated price one coin')%>",
+                    marketPriceDescr: "<%=_lt.get('Price. Choose e.g.')%>"
+                },
+                successDeals: [],
+                paymentMethod: 'coinbase',
+                comissionItems: [],
+                coinBaseSecondStep: false,
+                vsCoinBase: '',
+                waitingPaymentObj: {},
+                agreementPayments: false,
+                lastPayments: [],
+                txHash: '',
+                walletPaidFrom: '',
+                pltcSecondStep: false
+
+            }
+        },
+        methods: {
+
+            getDealClass(oneDeal) {
+                if (oneDeal.comissionRequestedWhen && !oneDeal.commisionPaidWhen) {
+                    return 'faded'
+                } else if (oneDeal.commisionPaidWhen) {
+                    return 'wasDealPaidYes'
+                } else {
+                    return ''
+                }
+            },
+            subscripeToPayments() {
+                let obj = {
+                    uHash: Cookies.get('uHashL')
+                }
+                if (obj.uHash && obj.uHash.length > 5) {
+
+                    socket.emit('subscripeToPaymentStatus', obj, (err, response) => {
+                        console.log('err response', err, response)
+                    })
+                }
+            },
+            getPaymentCssClass(onePayment) {
+                if (!onePayment.coinbaseConfirmedAt) {
+                    if (onePayment.coinbaseExpired) {
+                        return 'paymentStatusExpired'
+                    } else if (onePayment.coinbaseFailed) {
+                        return 'paymentStatusExpired'
+                    } else if (onePayment.coinbaseDelayed) {
+                        return 'paymentStatusW'
+                    } else {
+                        return 'paymentStatusW'
+                    }
+                } else {
+                    return 'paymentStatusSuccess'
+                }
+            },
+            getPaymentCssClassPltc(onePayment) {
+                if (!onePayment.paid) {
+                    return 'paymentStatusW'
+                } else {
+                    return 'paymentStatusSuccess'
+                }
+            },
+        getCurrencyInfoPaidComission(onePayment) {
+                if (onePayment.paymentMethod === 'coinbase') {
+                    return 'euros'
+                } else {
+                    return 'PLTC'
+                }
+        },
+            showPaymentStatusCoinbase(onePayment) {
+                if (!onePayment.coinbaseConfirmedAt) {
+                    if (onePayment.coinbaseExpired) {
+                        return "<%=_lt.get('Expired payment.')%>"
+                    } else if (onePayment.coinbaseFailed) {
+                        "<%=_lt.get('Failed payment')%>"
+                    } else if (onePayment.coinbaseDelayed) {
+                        "<%=_lt.get('Delayed payment')%>"
+                    } else {
+                        return "<%=_lt.get('Waiting for payment.')%>"
+                    }
+                } else {
+                    return "<%=_lt.get('Successful payment!')%>"
+                }
+            },
+
+            showPaymentStatusPltc(onePayment) {
+                if (!onePayment.paid) {
+                    return "<%=_lt.get('Waiting for payment.')%>"
+                } else {
+                    return "<%=_lt.get('Successful payment!')%>"
+                }
+            },
+
+            loadLastPayments() {
+              let obj = {
+                  uHash: Cookies.get('uHashL')
+              };
+              if (obj.uHash  && obj.uHash.length > 5) {
+                socket.emit('loadLastPayments', obj, (error, payments) => {
+                    if (error) {
+                        if (error !== 'Auth. error uHash:') {
+                            swal("<%=_lt.get('Error')%>", error, 'error')
+                        }
+                    } else {
+                        this.lastPayments = [];
+                        this.lastPayments = payments;
+                    }
+                })
+              }
+            },
+            sealPayment() {
+                var obj = {
+                    totalAmount: this.getFinalComission(),
+                    deals: this.successDeals,
+                    token: Cookies.get('uHashL'),
+                    paymentMethod: this.paymentMethod,
+                    txHash: this.txHash,
+                    walletPaidFrom: this.walletPaidFrom
+                };
+
+                if (obj.paymentMethod === 'PlatonCoin') {
+                    obj.totalAmount = this.getFinalComissionInPltc()
+                }
+
+                if (this.paymentMethod === 'PlatonCoin' && this.txHash.length < 3) {
+                    swal("<%=_lt.get('Attention!')%>", "<%=_lt.get('Enter transaction hash')%>", 'error')
+                    return;
+                }
+
+                if (this.agreementPayments === false) {
+                    swal("<%=_lt.get('Attention!')%>", "<%=_lt.get('You must agree')%>", 'error')
+                    return;
+                }
+                if (this.getFinalComission() <= 0) {
+                    swal("<%=_lt.get('Attention!')%>", "<%=_lt.get('You cant create paymen')%>", 'error')
+                    return;
+                }
+
+                socket.emit("sealPayment", obj, (error, vsObj) => {
+                    if (error) {
+                        swal("<%=_lt.get('Error')%>",  + error, 'error');
+                        } else {
+                            this.successDeals.forEach(oneDeal => {
+                                oneDeal.comissionRequestedWhen = 'now'
+                            })
+
+                        if (obj.paymentMethod === 'coinbase') {
+                            this.coinBaseSecondStep = true;
+                            this.vsCoinBase = vsObj.vsCoinBase;
+                        } else {
+                            this.pltcSecondStep = true;
+                        }
+
+                        this.successDeals.forEach(oneDeal => {
+                            oneDeal.comissionRequestId = vsObj.vs
+                        })
+                        this.lastPayments.unshift(vsObj.paymentObj);
+
+                        }
+                    });
+                },
+            getFinalComissionInPltc() {
+                return ((this.getFinalComission()*0.9)/0.23).trimNum(4)
+            },
+            getFinalComission(withWaitingPayments = false) {
+                let summ = 0
+                this.successDeals.forEach(oneDeal => {
+                    if (withWaitingPayments === true) {
+                        summ = summ + (oneDeal.amountNeeded*oneDeal.sellingCurrencyObj.rateToEur)/100
+                    } else if (!oneDeal.comissionRequestedWhen) {
+                        summ = summ + (oneDeal.amountNeeded*oneDeal.sellingCurrencyObj.rateToEur)/100
+                    }
+
+                })
+
+                return summ.trimNum(2)
+            },
+            isWaitingPayments() {
+                let someResponse = false;
+                this.successDeals.forEach(oneDeal => {
+                    if (oneDeal.comissionRequestedWhen) {
+                        someResponse = true
+                    }
+
+                })
+                return someResponse;
+            },
+            ifContents(whichCurrency) {
+                let result = false;
+                this.comissionItems.forEach(oneItem => {
+                    if (oneItem.currency === whichCurrency) {
+                        result = oneItem.howMuch
+                    }
+                })
+                return result
+            },
+        replaceSum(whichCurrency, newSumm) {
+            this.comissionItems.forEach(oneItem => {
+                if (oneItem.currency === withCurrency) {
+                    oneItem.howMuch = newSumm
+                }
+            })
+        },
+            collectFinalComission() {
+              this.successDeals.forEach(oneDeal => {
+                  let someResult = this.ifContents(oneDeal.buyingCurrencyObj.short_code);
+                  if (someResult !== false) {
+                        let newSumm = someResult + (oneDeal.amountSpend/100)
+                      this.replaceSum(oneDeal.buyingCurrencyObj.short_code, newSumm)
+                  } else {
+                      this.comissionItems.push({currency: oneDeal.buyingCurrencyObj.short_code, howMuch: (oneDeal.amountSpend/100), currencySelled: oneDeal.sellingCurrencyObj.name})
+                  }
+              })
+            },
+
+            loadSuccessDeals() {
+                let obj = {
+                    uHash: Cookies.get('uHashL')
+                };
+                if (obj.uHash && obj.uHash.length > 5) {
+                    socket.emit('readPaidUserDeals', obj, (error, deals) => {
+                        if (error) {
+                            if (error !== 'Auth. error uHash:') {
+                                swal("<%=_lt.get('Error')%>", error, 'error')
+                            }
+                        } else {
+                            this.successDeals = deals
+                            this.collectFinalComission()
+                        }
+                    }) 
+                }
+            }
+
+        },
+        watch: {
+
+        },
+        computed: {
+
+
+        },
+        beforeDestroy() {
+            socket.off('updatePaymentStatusCoinBase', () => {
+                console.log('unsubscribe updatePaymentStatusCoinBase')
+            })
+        }
+        ,
+        mounted() {
+
+            socket.on('updatePaymentStatusCoinBase', (payObj) => {
+                console.log('recieve updatePaymentStatusCoinBase', payObj)
+
+                this.lastPayments.forEach(onePayment => {
+                    if (onePayment.id === payObj.id) {
+
+                        if (payObj.method && payObj.method === 'PlatonCoin') {
+                            if (payObj.what === 'confirmed') {
+
+                                onePayment.paid = 'now'
+
+                                this.successDeals.forEach(oneDeal => {
+                                    if (oneDeal.comissionRequestId && oneDeal.comissionRequestId === onePayment.id) {
+                                        oneDeal.commisionPaidWhen = new Date().toLocaleString();
+                                    }
+                                })
+
+                                swal("<%=_lt.get('Successfully paid!')%>", "<%=_lt.get('The history disappear')%>", 'success')
+
+
+                            } else {
+                                console.log('err wtf? payObj.what === confirmed')
+                            }
+                        } else {
+
+                            if (payObj.what === 'confirmed') {
+                                onePayment.coinbaseConfirmedAt = 'now'
+                                onePayment.paid = 'now'
+
+                                this.successDeals.forEach(oneDeal => {
+                                    if (oneDeal.comissionRequestId && oneDeal.comissionRequestId === onePayment.id) {
+                                        oneDeal.commisionPaidWhen = new Date().toLocaleString();
+                                    }
+                                })
+
+                                swal("<%=_lt.get('Successfully paid!')%>", "<%=_lt.get('The history disappear')%>", 'success')
+
+                            } else if (payObj.what === 'expired') {
+                                onePayment.coinbaseExpired = 'now'
+                                swal("<%=_lt.get('Error with payment')%>", "<%=_lt.get('The transaction with ID')%>" + payObj.id + "<%=_lt.get('was expired')%>", 'error')
+                                    .then(hmm => {
+                                        location.reload()
+                                    })
+                            } else if (payObj.what === 'failed') {
+                                onePayment.coinbaseFailed = 'now'
+                                swal("<%=_lt.get('Error with payment')%>", "<%=_lt.get('The transaction with ID')%>" + payObj.id + "<%=_lt.get('was unsuccessful')%>", 'error')
+                                    .then(hmm => {
+                                        location.reload()
+                                    })
+                            } else if (payObj.what === 'delayed') {
+                                onePayment.coinbaseDelayed = 'now'
+                            }
+
+                        }
+                    }
+                })
+            })
+
+
+            console.log('comissions mounted')
+            this.loadSuccessDeals()
+
+            this.subscripeToPayments();
+            this.loadLastPayments();
+            /*----------------------------------------------------*/
+            	/*  Payment Accordion
+            	/*----------------------------------------------------*/
+                var radios = document.querySelectorAll('.payment-tab-trigger > input');
+
+                for (var i = 0; i < radios.length; i++) {
+                    radios[i].addEventListener('change', expandAccordion);
+                }
+
+                function expandAccordion (event) {
+                  /* jshint validthis: true */
+                  var tabber = this.closest('.payment');
+                  var allTabs = tabber.querySelectorAll('.payment-tab');
+                  for (var i = 0; i < allTabs.length; i++) {
+                    allTabs[i].classList.remove('payment-tab-active');
+                  }
+                  event.target.parentNode.parentNode.classList.add('payment-tab-active');
+                }
+
+            	$('.billing-cycle-radios').on("click", function() {
+            		if($('.billed-yearly-radio input').is(':checked')) { $('.pricing-plans-container').addClass('billed-yearly'); }
+            		if($('.billed-monthly-radio input').is(':checked')) { $('.pricing-plans-container').removeClass('billed-yearly'); }
+            	});
+        }
+    }));
+</script>

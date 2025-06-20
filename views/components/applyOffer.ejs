@@ -1,0 +1,371 @@
+<script>
+
+    var applyOffer = Vue.component('apply-offer', ({
+        name: 'applyOffer',
+        props: ['userObj', 'offerObj', 'reviewsArr', 'cryptoFiatRatesArr'],
+        template: `<% include applyOffer.vue %>`,
+        data: function () {
+            return {
+                moment: moment,
+                translate: {
+                    estimatePrice: "<%=_lt.get('Estimated price one coin')%>",
+                    marketPriceDescr: "<%=_lt.get('Price. Choose e.g.')%>"
+                },
+                bootStrapSelectLink: { // fucking overhead
+                    crypto: '',
+                    currency: '',
+                    percent: '',
+                    yourCrypto: ''
+                },
+                bookmarks: [],
+                neededAmount: 0,
+                choosedPaymentOption: ''
+            }
+        },
+        methods: {
+            getDaysAgo(oneReview) {
+              if (oneReview.daysAgo === 0) {
+                  return '<%=_lt.get('Today')%>'
+              } else if (oneReview.daysAgo === 1) {
+                  return '1' + '<%=_lt.get('days ago')%>'
+              } else {
+                  return oneReview.daysAgo+' ' + '<%= _lt.get('days ago') %>'
+              }
+            },
+            initiateOrder: function () {
+                $("#snackbar-place-bid").prop('disabled', true);
+                $("#snackbar-place-bid").css("opacity", "0.5");
+
+                if (this.neededAmount === 0 || this.neededAmount < 0) {
+                    swal('<%=_lt.get('Specify the amount')%>', '<%=_lt.get('You buy a zero')%>', 'error')
+                    $("#snackbar-place-bid").prop('disabled', false);
+                    $("#snackbar-place-bid").css("opacity", "1");
+                    return;
+                }
+
+                if (!this.userObj.uHash || this.userObj.uHash.length < 4) {
+                    swal('<%=_lt.get('Error')%>', '<%=_lt.get('You need to authorize')%>', 'error')
+                    $("#snackbar-place-bid").prop('disabled', false);
+                    $("#snackbar-place-bid").css("opacity", "1");
+                    return;
+                }
+
+                let dealObj = {
+                    offerObj: this.offerObj,
+                    neededAmount: this.neededAmount,
+                    dealDate: $("#dealDate").val(),
+                    infoPayAmount: this.calculatedDealPrice,
+                    infoCurrency: this.currency,
+                    uHash : this.userObj.uHash,
+                    choosedPaymentOption: this.choosedPaymentOption,
+                    sellingCurrency: this.sellingCurrency
+                }
+
+
+                if (!dealObj.choosedPaymentOption) {
+                    swal('<%=_lt.get('Error')%>', '<%=_lt.get('Select payment options')%>', 'error')
+                    $("#snackbar-place-bid").prop('disabled', false);
+                    $("#snackbar-place-bid").css("opacity", "1");
+                    return;
+                }
+
+                socket.emit('initiateDeal', dealObj, function (error, response) {
+                    if (error) {
+                        console.log('Error in initiateDeal', error)
+                        $("#snackbar-place-bid").prop('disabled', false);
+                        $("#snackbar-place-bid").css("opacity", "1");
+                        swal('Error', error, 'error')
+                    } else {
+                        $("#snackbar-place-bid").prop('disabled', false);
+                        $("#snackbar-place-bid").css("opacity", "1");
+                        swal('<%=_lt.get('Success')%>', '<%=_lt.get('You successfully trans')%>', 'success')
+                            .then(hmm => {
+                                location.reload();
+                            })
+                    }
+                })
+
+
+            },
+            deleteUserObj: function () {
+            //  alert('s')
+                this.$root.$emit('logoutUser', true);
+            },
+            increaseDeal: function () {
+                this.neededAmount = (this.neededAmount * 10 + 0.1 * 10) / 10;
+            },
+            decreaseDeal: function () {
+                this.neededAmount = (this.neededAmount * 10 - 0.1 * 10) / 10;
+                if (this.neededAmount <= 0) {
+                    this.neededAmount = 0
+                }
+            },
+            shareIt: function (site) {
+                var URL = encodeURIComponent(document.location);
+                var TITLE = '<%=_lt.get('I found interesting offer')%>'
+                switch (site) {
+                    case 'facebook':
+                        url = "https://www.facebook.com/sharer/sharer.php?u=" + URL;
+                        break;
+                    case 'twitter':
+                        url = "http://twitter.com/share?text=" + TITLE + "&url=" + URL;
+                        break;
+                    case 'linkedin':
+                        url = "https://www.linkedin.com/shareArticle?mini=true&url=" + URL + "&title=" + TITLE;
+                        break;
+                    case 'plus':
+                        url = "https://plus.google.com/";
+                        break;
+                    default:
+                        url = "https://www.linkedin.com/shareArticle?mini=true&url=" + URL + "&title=" + TITLE;
+                        break;
+                }
+                window.open(url, '', 'left=0,top=0,width=550,height=450,personalbar=0,toolbar=0,scrollbars=0,resizable=0');
+            },
+            setInBookmark: function () {
+                try {
+                    let serialize = localStorage.getItem('bookmarkedOffers');
+                    if (!serialize) {
+                        this.bookmarks = [];
+                    }
+                    else {
+                        this.bookmarks = JSON.parse(serialize);
+                    }
+                } catch (e) {
+                    localStorage.removeItem('bookmarkedOffers');
+                }
+
+                if (!this.bookmarks.includes(this.offerObj.offerId)){
+                    this.bookmarks.push(this.offerObj.offerId);
+                }
+                else {
+                    this.bookmarks.remove(this.offerObj.offerId)
+                }
+                let serialized = JSON.stringify(this.bookmarks);
+                localStorage.setItem('bookmarkedOffers', serialized);
+            },
+            priceFormatted: function () {
+                if (this.offerObj.priceType === 'dynamic') {
+                    let percent = '+0';
+
+                    if (this.offerObj.dynamicPercent !== 'zero') {
+                        percent = this.offerObj.dynamicPercent.replace('m', '-');
+                        percent = percent.replace('p', '+')
+                    }
+
+                    if (this.cryptoFiatRatesArr){
+                        this.cryptoFiatRatesArr.forEach((curr) => {
+                            if (curr.short_code === this.offerObj.short_code){
+                                this.offerObj.rateToUsd = curr.rateToUsd;
+                                this.offerObj.rateToEur = curr.rateToEur;
+                                this.offerObj.rateToRub = curr.rateToRub;
+                                this.offerObj.rateToCzk = curr.rateToCzk;
+                                this.offerObj.rateToNzd = curr.rateToNzd;
+                                this.offerObj.rateToAud = curr.rateToAud;
+                            }
+                        })
+                    }
+
+                    let lastPrice = 0;
+                    if (this.offerObj.fiatShortName === 'USD') {
+                        lastPrice = this.offerObj.rateToUsd
+                    } else if (this.offerObj.fiatShortName === 'EUR') {
+                        lastPrice = this.offerObj.rateToEur
+                    } else if (this.offerObj.fiatShortName === 'RUB') {
+                        lastPrice = this.offerObj.rateToRub
+                    } else if (this.offerObj.fiatShortName === 'CZK') {
+                        lastPrice = this.offerObj.rateToCzk
+                    } else if (this.offerObj.fiatShortName === 'NZD') {
+                        lastPrice = this.offerObj.rateToNzd
+                    } else if (this.offerObj.fiatShortName === 'AUD') {
+                        lastPrice = this.offerObj.rateToAud
+                    }
+
+                    let realPrice = lastPrice;
+                    if (percent !== '+0') {
+                        if (percent.includes("+")) {
+                            let getNumber = percent.replace('+', '');
+                            getNumber = parseInt(getNumber)
+                            realPrice = ((lastPrice/100)*getNumber)+lastPrice
+                        } else if (percent.includes("-")) {
+                            let getNumber = percent.replace('-', '');
+                            getNumber = parseInt(getNumber)
+                            realPrice = lastPrice-((lastPrice/100)*getNumber)
+                        }
+                    }
+
+                    realPrice = realPrice.trimNum(2);
+
+                    return {
+                        title: '<%=_lt.get('Dynamic price')%>' + ` (${percent}%  `+ '<%= _lt.get('from coingecko') %>' + ')',
+                        price: `${this.offerObj.symbol}${realPrice} ` + '<%=_lt.get('in this time')%>',
+                        priceRawDouble: realPrice
+                    }
+                } else if (this.offerObj.priceType === 'fixed' && this.offerObj.offerType === 'exch') {
+                    if (this.offerObj.exchange_rate) this.offerObj.exchange_rate = this.offerObj.exchange_rate.trimNum(2);
+                    return {
+                        title: '<%=_lt.get('Fixed price')%>',
+                        price: `1 ${this.offerObj.symbol} : ${this.offerObj.exchange_rate} ${this.offerObj.cryptoShortCode}`,
+                        priceRawDouble: this.offerObj.exchange_rate
+                    }
+
+                } else {
+                    if (this.offerObj.exchange_rate) this.offerObj.exchange_rate = this.offerObj.exchange_rate.trimNum(2);
+                    return {
+                        title: '<%=_lt.get('Fixed price')%>',
+                        price: `${this.offerObj.symbol} ${this.offerObj.exchange_rate} : 1 ${this.offerObj.short_code}`,
+                        priceRawDouble: this.offerObj.exchange_rate
+                    }
+                }
+            },
+        },
+        watch: {
+            // whenever question changes, this function will run
+            neededAmount: function (newVal, oldVal) {
+                if (newVal > parseFloat(this.offerObj.max_deposite)) {
+                    swal('<%=_lt.get('The user not have much')%>' + newVal.toFixed(5), '<%=_lt.get('Enter a smaller amount')%>' + parseFloat(this.offerObj.max_deposite)+'.', 'error')
+                    this.neededAmount = oldVal
+                } else {
+                    //console.log('all ok')
+                }
+            }
+        },
+        update() {
+            $('#paymentOptions').selectpicker('refresh');
+        },
+        computed: {
+            paymentOptionsArr() {
+                    let arr = []
+                    if (this.offerObj.payments_personal && this.offerObj.payments_personal === 1) {
+                        arr.push({id: 1, text: '<%=_lt.get('Personal meeting')%>'})
+                    }
+                    if (this.offerObj.payments_bank && this.offerObj.payments_bank === 1) {
+                        arr.push({id: 2, text: '<%=_lt.get('Bank wire')%>'})
+                    }
+
+                    if (this.offerObj.payments_paypal_etc && this.offerObj.payments_paypal_etc === 1) {
+                        arr.push({id: 3, text: '<%=_lt.get('Paypal Stripe etc')%>'})
+                    }
+
+
+                    if (this.offerObj.payments_internal && this.offerObj.payments_internal === 1) {
+                        arr.push({id: 4, text: '<%=_lt.get('Internal transfers')%>'})
+                    }
+                    $('#paymentOptions').selectpicker('refresh');
+                    return arr;
+            },
+            currency: function () {
+              if (this.offerObj) {
+                  if (this.offerObj.offerType === 'wts' || this.offerObj.offerType === 'wtb') {
+                      return this.offerObj.symbol
+                  } else if (this.offerObj.offerType === 'exch') {
+                      return this.offerObj.cryptoShortCode
+                  } else {
+                      console.log('Error in CURRENCY COMPUTED', rLog(this.offerObj.offerType))
+                      return ''
+                  }
+              }  else {
+                  return ''
+              }
+            },
+
+            sellingCurrency: function () {
+              if (this.offerObj) {
+                  if (this.offerObj.offerType === 'wts' || this.offerObj.offerType === 'wtb') {
+                      return this.offerObj.cryptoShortCode
+                  } else if (this.offerObj.offerType === 'exch') {
+                      return this.offerObj.symbol
+                  } else {
+                      console.log('Error in CURRENCY COMPUTED', rLog(this.offerObj.offerType))
+                      return ''
+                  }
+              }  else {
+                  return ''
+              }
+            }
+        ,
+            paymentOptions: function() {
+                if (this.offerObj) {
+                    let rString = ''
+                    if (this.offerObj.payments_personal && this.offerObj.payments_personal === 1) {
+                        rString = rString+' <span>' + '<%=_lt.get('Personal meeting')%>' + '</span>'
+                    }
+                    if (this.offerObj.payments_bank && this.offerObj.payments_bank === 1) {
+                        rString = rString + ' <span>' + '<%=_lt.get('Bank wire')%>' + '</span>'
+                    }
+
+                    if (this.offerObj.payments_paypal_etc && this.offerObj.payments_paypal_etc === 1) {
+                        rString = rString + ' <span>' + '<%=_lt.get('Paypal Stripe etc')%>' + '</span>'
+                    }
+
+
+                    if (this.offerObj.payments_internal && this.offerObj.payments_internal === 1) {
+                        rString = rString + ' <span>' + '<%= _lt.get('Internal transfers') %>' + '</span>'
+                    }
+
+                    return rString
+                } else {
+                    return ''
+                }
+            },
+            whenWasPosted: function() {
+                let date = moment(this.offerObj.activated_date).startOf('day');
+                let now = moment();
+                let days = now.diff(date, "days");
+                if (days === 0) {
+                  return '<%= _lt.get('today') %>'
+                } else {
+                    return days + ' <%= _lt.get('days ago') %>'
+                }
+            },
+
+            calculatedDealPrice: function() {
+               return (this.neededAmount*this.priceFormatted().priceRawDouble).trimNum(8)
+            }
+
+        },
+        mounted() {
+            let serialize = localStorage.getItem('bookmarkedOffers');
+            if (!serialize) {
+                this.bookmarks = [];
+            }
+            else {
+                this.bookmarks = JSON.parse(serialize);
+            }
+            //starRating('.star-rating2');
+            $('.selectApplyOffer').selectpicker();
+
+            $('#priceOne').bind('DOMSubtreeModified',function(){
+                //$('#priceOne').animate({ opacity: 0 }, 200).animate({ opacity: 1}, 200);
+                $('#priceOne').stop().css('opacity', '0').animate({ opacity: 1 }, 200);
+            });
+
+            // Link to Register Tab
+            $('.register-tab').on('click', function (event) {
+                event.preventDefault();
+                $(".popup-tab-content").hide();
+                $("#register.popup-tab-content").show();
+                $("body").find('.popup-tabs-nav a[href="#register"]').parent("li").click();
+            });
+
+            $('.popup-with-zoom-anim').magnificPopup({
+                type: 'inline',
+
+                fixedContentPos: false,
+                fixedBgPos: true,
+
+                overflowY: 'auto',
+
+                closeBtnInside: true,
+                preloader: false,
+
+                midClick: true,
+                removalDelay: 300,
+                mainClass: 'my-mfp-zoom-in'
+            });
+
+            $('.copy-url input').val(window.location.href);
+        	new ClipboardJS('.copy-url-button');
+        }
+    }));
+</script>

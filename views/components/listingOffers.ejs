@@ -1,0 +1,590 @@
+<script>
+    var index = Vue.component('listing-offers', ({
+        name: 'listingOffers',
+        props: ['cryptoFiatRatesArr'],
+        template: `<%include listingOffers.vue%>`,
+        data: function () {
+            return {
+                moment: moment,
+                someBool: true,
+                defaultCurrency: <%-JSON.stringify(currencyObj)%>,
+                selectedCurrencies: [],
+                offersDefault: <%-JSON.stringify(offers)%>,     // default sorted by Date
+                testerArr: [{nam: 'vccxvcx'}, {nam: 'tutyttyt'}, {nam: 'qwqwqwq'}],
+                bookmarkedOffers: [],
+                sortedBy: 'Date',
+                sortBy: 'Default',
+                offersType: 'wts', /* wts, wtb, exch */
+                offers: [],
+                offersStorageFiltered: [],
+                offersStorage: [],
+                offersPaginationArray: [],
+                currentOffersPage: 1,
+                offersPerPageCount: 25,
+                onlyYourCity: false,
+                city: '',
+                countryCode: '',
+                countryName: '',
+                lat: 0,
+                long: 0,
+                zipCode: "0",
+                cryptoSearch: '',
+                notSearch: false,
+                showCurrencyAutocomplete: false,
+                currencySearchArr: [{name: 'BitCoin', short_code: 'BTC', id: 1}, {
+                    name: 'Ethereum',
+                    short_code: 'ETH',
+                    id: 2
+                }, {name: 'BitCoin Cash', short_code: 'BCH', id: 3}, {name: 'Eosio', short_code: 'EOS', id: 4}],
+                checkedPayments: ['bank', 'personal', 'digital'],
+                offersMaxPriceHandSelected: 100000000000,
+                offersMinPriceHandSelected: 0
+            }
+        },
+        computed: {
+            clientGeoObj: function () {
+                let obj = {
+                    onlyYourCity: this.onlyYourCity,
+                    city: this.city,
+                    countryCode: this.countryCode,
+                    countryName: this.countryName,
+                    lat: this.lat,
+                    long: this.long,
+                    zipCode: this.zipCode
+                }
+                return obj;
+            },
+            offersByPrice: function () {
+                let newArr = this.offersDefault.slice(0);   // always copy arr before man.
+                newArr.sort(function (a, b) {
+                    if (a.exchange_rate > b.exchange_rate) {
+                        return 1;
+                    }
+                    if (a.exchange_rate < b.exchange_rate) {
+                        return -1;
+                    }
+                    return 0;
+                });
+                return newArr;
+            },
+            offersByDate: function () {
+                return this.offersDefault;
+            },
+            offersBookmarked: function () {
+                let newArr = this.offers.slice(0);
+                return newArr.filter(oneOffer => this.bookmarkedOffers.includes(oneOffer.offerId));
+            },
+            offersMinPrice: function () {
+                var minPrice = 0;
+                if (this.offers.length > 0) {
+                    minPrice = this.getPriceFormatted(this.offers[0]);
+                } else {
+                    return minPrice;
+                }
+
+                this.offers.forEach(oneOffer => {
+                    if (this.getPriceFormatted(oneOffer) < minPrice) {
+                        minPrice = this.getPriceFormatted(oneOffer);
+                    }
+                })
+                return minPrice;
+            },
+            offersMaxPrice: function () {
+                var maxPrice = 1;
+                if (this.offers.length > 0) {
+                    maxPrice = this.getPriceFormatted(this.offers[0]);
+                } else {
+                    return maxPrice;
+                }
+
+                this.offers.forEach(oneOffer => {
+                    if (this.getPriceFormatted(oneOffer) > maxPrice) {
+                        maxPrice = this.getPriceFormatted(oneOffer);
+                    }
+                })
+                return maxPrice;
+            }
+        },
+
+        created() {
+            document.title = "LocalCrypto S7!";
+        },
+
+
+        watch: {
+            cryptoSearch: function (newVal, oldVal) {
+                if (newVal !== '') {
+                    socket.emit('autocompleteCrypto', newVal, (error, responseArr) => {
+                        if (error) {
+                            console.log('Error in autocompleteCrypto:', error)
+                        } else {
+                            this.currencySearchArr = responseArr;
+                            this.showCurrencyAutocomplete = true;
+                        }
+                    })
+                }
+
+            }
+        },
+        methods: {
+            createSlider: function () {
+
+                $("#sliderContainer").html(`<input id="sliderPrice" class="range-slider" type="text" value="" data-slider-currency="$" />`);    // insert new
+
+                var currencyAttr = $("#sliderPrice").attr('data-slider-currency');
+
+                let stepDefault = 0.01;
+                if (this.offersMaxPrice < 2) {  // if prices are low, increase step
+                    stepDefault = 0.0001;
+                }
+
+                let self = this;
+                var mySlider = new Slider("#sliderPrice", {
+                    // initial options object
+                    min: this.offersMinPrice,
+                    max: this.offersMaxPrice,
+                    step: stepDefault,
+                    value: [this.offersMinPrice, this.offersMaxPrice],
+                    formatter: function (value) {
+                        return currencyAttr + ThousandSeparator(parseFloat(value[0])) + " - " + currencyAttr + ThousandSeparator(parseFloat(value[1]));
+                    }
+                }).on('slideStop', (newArrVal) => {
+                    if (newArrVal && newArrVal.length === 2) {
+                        this.offersMinPriceHandSelected = newArrVal[0];
+                        this.offersMaxPriceHandSelected = newArrVal[1];
+
+                        this.offersStorageFiltered  = this.offersStorage.filter((offer)=>{ return this.getPriceFormatted(offer) <= this.offersMaxPriceHandSelected && this.getPriceFormatted(offer) >= this.offersMinPriceHandSelected });
+
+                        this.currentOffersPage = 1;
+                        this.updateDisplayedOffersPage();
+
+                    }
+                })
+
+            },
+            changeOffersType: function (event) {
+                if (event.target.value === 'wtb') {
+                    this.offersType = 'wtb';
+                    this.readAnotherOffers();
+                } else if (event.target.value === 'wts') {
+                    this.offersType = 'wts';
+                    this.readAnotherOffers();
+                } else if (event.target.value === 'exch') {
+                    this.offersType = 'exch';
+                    this.readAnotherOffers();
+                }
+            },
+            lol() {
+                this.pages.push('post-offer');
+            },
+            setBookmark: function (event, id) {
+                try {
+                    let serialize = localStorage.getItem('bookmarkedOffers');
+                    if (!serialize) {
+                        this.bookmarkedOffers = [];
+                    }
+                    else {
+                        this.bookmarkedOffers = JSON.parse(serialize);
+                    }
+                } catch (e) {
+                    localStorage.removeItem('bookmarkedOffers');
+                }
+                
+                if (this.bookmarkedOffers.includes(id)) {
+                    this.bookmarkedOffers.remove(id);	// array extension
+                } else {
+                    this.bookmarkedOffers.push(id);
+                }
+
+                let serialized = JSON.stringify(this.bookmarkedOffers);
+                localStorage.setItem('bookmarkedOffers', serialized);
+                event.stopPropagation();
+            },
+            goToOffer (event, page){
+                window.location.href = page;
+                this.$parent.goToPage(page);
+            },
+            sortByPrice: function (desc = true){
+                let newArr = this.offers.slice(0);
+                if (desc) {
+                    newArr.sort(function (a, b) {
+                        if (a.realPriceForOne < b.realPriceForOne) {
+                            return 1;
+                        }
+                        if (a.realPriceForOne > b.realPriceForOne) {
+                            return -1;
+                        }
+                        return 0;
+                    });
+                }
+                else {
+                    newArr.sort(function (a, b) {
+                        if (a.realPriceForOne > b.realPriceForOne) {
+                            return 1;
+                        }
+                        if (a.realPriceForOne < b.realPriceForOne) {
+                            return -1;
+                        }
+                        return 0;
+                    });
+                }
+                this.offers = newArr;
+            },
+            changeOffersSorting: function () {
+                if (this.sortedBy === 'Price descending') {
+                    this.sortBy = 'byPriceDesc'
+                    this.readAnotherOffers();
+                } else if (this.sortedBy === 'Price ascending') {
+                    this.sortBy = 'byPriceAsc'
+                    this.readAnotherOffers();
+                } else if (this.sortedBy === 'Date') {
+                    this.sortBy = 'byDate'
+                    this.readAnotherOffers();
+                } else if (this.sortedBy === 'Bookmarked') {
+                    this.sortBy = 'byBookmark'
+                    this.offers = this.offersBookmarked;
+                }
+            },
+            showMapView: function () {
+                alert('sssszz');
+            },
+            insertCurrencyInTag(oneCurrency) {
+                this.showCurrencyAutocomplete = false;
+
+                let isInArray = false;  // check if this currency is exist
+                this.selectedCurrencies.forEach(function (oneStoredCurrency) {
+                    if (oneStoredCurrency.id === oneCurrency.id) {
+                        isInArray = true;
+                    }
+                })
+
+                if (isInArray === false) {
+                    this.selectedCurrencies.push(oneCurrency);
+                    var newKeyword = $("<span class='keyword' id='choosedC" + oneCurrency.id + "'><span class='keyword-remove'></span><span class='keyword-text'>" + oneCurrency.name + "</span></span>");
+                    $("#listingSelected").append(newKeyword).trigger('resizeContainer');
+
+                    this.readAnotherOffers();
+
+                }
+
+                this.cryptoSearch = '';
+            },
+            deleteCurrencyFromSearchStack(currencyId) {
+                this.selectedCurrencies.forEach((oneStoredCurrency, ind) => {
+                    if (oneStoredCurrency.id === currencyId) {
+                        this.$delete(this.selectedCurrencies, ind)
+                        this.readAnotherOffers();
+                    }
+                })
+            },
+            readAnotherOffers(notFoundByCity = false) {
+                let searchBy;
+
+                if (notFoundByCity === true){
+                    searchBy = 'byCountry';
+                } else if (this.onlyYourCity === true || this.lat !== 0) {
+                    searchBy = 'byCity';
+                } else {
+                    searchBy = 'byDefault';
+                }
+
+                let obj = {
+                    selectedCurrencies: this.selectedCurrencies,
+                    geoObj: this.clientGeoObj,
+                    searchBy: searchBy,
+                    sortBy: this.sortBy,
+                    offersType: this.offersType,
+                    checkedPayments: this.checkedPayments,
+                    offersMinPrice: this.offersMinPrice,
+                    offersMaxPrice: this.offersMaxPrice
+                };
+
+
+                socket.emit('readNeededCurrenciesSellOffers', obj, (error, responseArr) => {
+                    if (error) {
+                        console.log('Error in readNeededCurrenciesSellOffers:', error)
+                        if (error.toString().includes('Cannot read property \'cityId\' of undefined')) {
+                            $('#city-not-found').css('display', 'block');
+                            $('#country-not-found').css('display', 'none');
+                            $('#no-offers').css('display', 'none');
+                            this.readAnotherOffers(true);
+                        }
+                        else {
+                            swal('Error', error, 'error');
+                            $('.loading').fadeOut('slow');
+                        }
+                    } else {
+                        if (responseArr.length === 0) {
+                            if (obj.searchBy === 'byCity') { // search in city return empty arr
+                                this.notSearch = true;
+                                $('#country-not-found').css('display', 'none');
+                                $('#city-not-found').css('display', 'block');
+                                $('#no-offers').css('display', 'none');
+                                this.readAnotherOffers(true);
+                            }
+                            else if (obj.searchBy === 'byCountry') { // search in country return empty arr
+                                this.notSearch = true;
+                                $('#country-not-found').css('display', 'block');
+                                $('#city-not-found').css('display', 'none');
+                                $('#no-offers').css('display', 'none');
+                                this.lat = 0;
+                                this.onlyYourCity = false;
+                                this.readAnotherOffers();
+                            }
+                            else { // search by default return empty arr
+                                $('#country-not-found').css('display', 'none');
+                                $('#city-not-found').css('display', 'none');
+                                $('#no-offers').css('display', 'block');
+                                this.offers = [];
+                            }
+                        }
+                        else {
+                            if (this.notSearch === false){
+                                $('#country-not-found').css('display', 'none');
+                                $('#city-not-found').css('display', 'none');
+                                $('#no-offers').css('display', 'none');
+                            }
+                            this.notSearch = false;
+                            this.offersStorage = responseArr;
+                            this.offersStorageFiltered = [];
+                            let pagesAmount = Math.ceil(this.offersStorage.length / this.offersPerPageCount);
+                            let pagesForPagination = [];
+                            for (var i = 1; i <= pagesAmount; i++) {
+                                pagesForPagination.push(i);
+                            }
+                            this.offersPaginationArray = pagesForPagination;
+                            this.currentOffersPage = 1;
+                            this.updateDisplayedOffersPage();
+                            if (this.$parent.whatPageToShow === 'main') {
+                                this.createSlider(this.offersMinPrice, this.offersMaxPrice);
+                            } else {
+                                console.log('strange execution readAnotherOffers in no main page')
+                            }
+
+                            if (this.sortBy === 'byPriceDesc') {
+                                this.sortByPrice(true);
+                            } else if (this.sortBy === 'byPriceAsc') {
+                                this.sortByPrice(false);
+                            }
+
+                            $('.loading').fadeOut('slow');
+
+                            if (this.onlyYourCity === true) {
+                                $("#autocomplete-listing-offer").val(this.city);
+                            }
+                        }
+                    }
+                })
+
+            },
+            updateDisplayedOffersPage () {
+                let pagesAmount = Math.ceil(this.offersStorage.length / this.offersPerPageCount);
+
+                if (this.offersStorageFiltered.length) {
+                    pagesAmount = Math.ceil(this.offersStorageFiltered.length / this.offersPerPageCount);
+                }
+
+                let pagesForPagination = [];
+                for (var i = 1; i <= pagesAmount; i++) {
+                    pagesForPagination.push(i);
+                }
+
+                this.offersPaginationArray = pagesForPagination;
+
+                if (this.offersStorageFiltered.length) {
+                    this.offers = this.offersStorageFiltered.slice(this.offersPerPageCount * (this.currentOffersPage - 1), this.offersPerPageCount* (this.currentOffersPage));
+                } else {
+                    this.offers = this.offersStorage.slice(this.offersPerPageCount * (this.currentOffersPage - 1), this.offersPerPageCount* (this.currentOffersPage));
+
+                }
+            },
+            goToPagination(pageNum) {
+                if (pageNum <= 0 || pageNum > this.offersPaginationArray.length) {
+                    return;
+                }
+                this.currentOffersPage = pageNum;
+                this.updateDisplayedOffersPage();
+            },
+            parseLatLong(lat, long, callback) {
+                geoModel.decodeLatLong(lat, long)
+                    .then(geoObj => {
+                        this.city = geoObj.city;
+                        this.countryName = geoObj.country;
+                        this.countryCode = geoObj.countryCode;
+                        this.lat = lat;   // avoid 3rd. party side error (they can retrieve another lat)
+                        this.long = long;
+                        this.zipCode = geoObj.zipcode;
+                        callback(null, 'success');
+                    })
+                    .catch(e => {
+                        console.log('Error parse lat:', e)
+                        callback(e, null);
+                    })
+            },
+            onlyYourCitySwitch: function () {
+                if (this.onlyYourCity === true) {
+                    $('.loading').fadeIn('slow');
+                    geoModel.returnGeoPosition()
+                        .then(geoObj => {
+                            this.city = geoObj.city;
+                            this.countryName = geoObj.country;
+                            this.countryCode = geoObj.countryCode;
+                            this.lat = geoObj.latitude;
+                            this.long = geoObj.longitude;
+                            this.zipCode = geoObj.zipcode;
+                            this.readAnotherOffers();
+                        })
+                        .catch(e => {
+                            $('.loading').fadeOut('slow');
+                            console.log('Error in returnGeoPosition: ', e)
+                            swal("<%=_lt.get('Error')%>", e.toString(), 'error');
+                            this.onlyYourCity = false;
+                        })
+                } else {
+                    this.readAnotherOffers();
+                    this.lat = 0;
+                }
+            },
+            getPriceFormatted: function (offerObj) {
+               // rLog(offerObj)
+                        if (offerObj.priceType === 'dynamic') {
+                            let percent = '+0';
+
+                            if (offerObj.dynamicPercent !== 'zero') {
+                                percent = offerObj.dynamicPercent.replace('m', '-');
+                                percent = percent.replace('p', '+')
+                            }
+
+                            if (this.cryptoFiatRatesArr){
+                                this.cryptoFiatRatesArr.forEach((curr) => {
+                                    if (curr.short_code === offerObj.cryptoShortCode){
+                                        offerObj.rateToUsd = curr.rateToUsd;
+                                        offerObj.rateToEur = curr.rateToEur;
+                                        offerObj.rateToRub = curr.rateToRub;
+                                        offerObj.rateToCzk = curr.rateToCzk;
+                                        offerObj.rateToNzd = curr.rateToNzd;
+                                        offerObj.rateToAud = curr.rateToAud;
+                                    }
+                                })
+                            }
+
+                            let lastPrice = 0;
+                            if (offerObj.fiatName === 'USD') {
+                                lastPrice = offerObj.rateToUsd
+                            } else if (offerObj.fiatName === 'EUR') {
+                                lastPrice = offerObj.rateToEur
+                            } else if (offerObj.fiatName === 'RUB') {
+                                lastPrice = offerObj.rateToRub
+                            } else if (offerObj.fiatName === 'CZK') {
+                                lastPrice = offerObj.rateToCzk
+                            } else if (offerObj.fiatName === 'NZD') {
+                                lastPrice = offerObj.rateToNzd
+                            } else if (offerObj.fiatName === 'AUD') {
+                                lastPrice = offerObj.rateToAud
+                            }
+
+                            let realPrice = lastPrice;
+                            if (percent !== '+0') {
+                                if (percent.includes("+")) {
+                                    let getNumber = percent.replace('+', '');
+                                    getNumber = parseInt(getNumber)
+                                    realPrice = ((lastPrice/100)*getNumber)+lastPrice
+                                } else if (percent.includes("-")) {
+                                    let getNumber = percent.replace('-', '');
+                                    getNumber = parseInt(getNumber)
+                                    realPrice = lastPrice-((lastPrice/100)*getNumber)
+                                }
+                            }
+                            offerObj.realPriceForOne = realPrice.trimNum(2);
+                            return realPrice.trimNum(2)
+                        } else if (offerObj.priceType === 'fixed' && offerObj.offerType === 'exch') {
+                            offerObj.realPriceForOne = offerObj.exchange_rate;
+                            return offerObj.exchange_rate.trimNum(2)
+
+                        } else {
+                            offerObj.realPriceForOne = offerObj.exchange_rate;
+                            return offerObj.exchange_rate.trimNum(2)
+                        }
+                    },
+        },
+
+        mounted() {
+            $('.selectListingOff').selectpicker();
+
+            /* BOOKMARKS! */
+            if (localStorage.getItem('bookmarkedOffers')) {
+                try {
+                    this.bookmarkedOffers = JSON.parse(localStorage.getItem('bookmarkedOffers'));
+                } catch (e) {
+                    localStorage.removeItem('bookmarkedOffers');
+                }
+            }
+
+            /* DEFAULT SORTING */
+            this.offers = this.offersDefault.slice(0);	// by copy array object!
+            this.readAnotherOffers();
+
+            this.createSlider();    // for price
+
+
+            if (window.autocomplete) {
+                window.autocomplete = null;
+            }
+
+            if (window.google) {
+                window.google = null;
+            }
+            // let addr = 'https://maps.googleapis.com/maps/api/js?key=' + '<%=locals.mapsGoogleApiKey%>' + '&libraries=places&callback=initAutocomplete';
+            // // if (isMyScriptLoaded(addr) === false) {
+            // let googleAutocomplete = document.createElement('script')
+            // googleAutocomplete.setAttribute('src', addr)
+            // googleAutocomplete.async = true
+            // googleAutocomplete.defer = true
+            // document.head.appendChild(googleAutocomplete)
+            //}
+
+
+            $(".keywords-container").each(function () {
+
+                var keywordInput = $(this).find(".keyword-input");
+                var keywordsList = $(this).find(".keywords-list");
+
+                // removing keyword
+                $(document).on("click", ".keyword-remove", function () {
+                    let cssObj = $(this).parent();
+                    cssObj.addClass('keyword-removed');
+
+                    function removeFromMarkup() {
+                        $(".keyword-removed").remove();
+                    }
+
+                    setTimeout(removeFromMarkup, 500);
+                    let idParent = cssObj.attr('id');
+                    let idOfCurrency = parseInt(idParent.replace('choosedC', ''));
+                    app.$refs.listingOffers.deleteCurrencyFromSearchStack(idOfCurrency);
+                    keywordsList.css({'height': 'auto'}).height();
+                });
+
+
+                // animating container height
+                keywordsList.on('resizeContainer', function () {
+                    var heightnow = $(this).height();
+                    var heightfull = $(this).css({'max-height': 'auto', 'height': 'auto'}).height();
+
+                    $(this).css({'height': heightnow}).animate({'height': heightfull}, 200);
+                });
+
+                $(window).on('resize', function () {
+                    keywordsList.css({'height': 'auto'}).height();
+                });
+
+                var keywordCount = $('.keywords-list').children("span").length;
+
+                // Enables scrollbar if more than 3 items
+                if (keywordCount > 0) {
+                    keywordsList.css({'height': 'auto'}).height();
+                }
+            });
+        }
+    }));
+</script>

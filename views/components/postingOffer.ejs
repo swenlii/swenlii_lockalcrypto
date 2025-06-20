@@ -1,0 +1,549 @@
+<script>
+    var postOffer = Vue.component('post-offer', ({
+        name: 'postOffer',
+        props: ['userObj'],
+        template: `<% include postingOffer.vue %>`,
+        data: function () {
+            return {
+                isPosting: false,
+                cryptoCurrencies: [],
+                fiatCurrencies: [],
+                choosedFiatId: '',
+                choosedCryptoId: '',
+                city: '',
+                countryName: '',
+                countryCode: '',
+                lat: '',
+                long: '',
+                zipCode: '',
+                offerTitle: '',
+                priceType: 'dynamic',
+                price: '',
+                possiblePercent: '',
+                translate: {
+                    estimatePrice: "<%=_lt.get('Estimated price one coin')%>",
+                    marketPriceDescr: "<%=_lt.get('Price. Choose e.g.')%>"
+                },
+                deposite: '',
+                canDivide: true,
+                offerType: 'wts',
+                descr: '',
+                paymentBank: true,
+                paymentMeet: true,
+                paymentDigital: false,
+                paymentInternal: false,
+                firstName: '',
+                lastName: '',
+                email: '',
+                avatarPath: '',
+                yourCrypto: '',
+                alreadyRegistered: 'no',
+                password: '',
+                clientIp: this.$parent.clientIp,
+                validationFields: [],
+                bootStrapSelectLink: { // fucking overhead
+                    crypto: '',
+                    currency: '',
+                    percent: '',
+                    yourCrypto: ''
+                }
+            }
+        },
+        methods: {
+            deleteUserObj: function () {
+            //  alert('s')
+                this.$root.$emit('logoutUser', true);
+            },
+
+            reset() {
+                this.alreadyRegistered = 'no';
+                this.bootStrapSelectLink = {
+                    crypto: "",
+                    currency: "",
+                    percent: "",
+                    yourCrypto: ""
+            }
+                this.canDivide = true;
+                this.choosedCryptoId = '';
+                this.choosedFiatId = '';
+                this.city = '';
+                this.countryCode = '';
+                this.countryName = '';
+                this.deposite = '';
+                this.descr = '';
+                this.lat = '';
+                this.long = '';
+                this.offerTitle = '';
+                this.offerType = 'wts';
+                this.paymentBank = true;
+                this.paymentDigital = false;
+                this.paymentInternal = false;
+                this.paymentMeet = true;
+                this.possiblePercent = '';
+                this.price = '';
+                this.priceType = 'dynamic';
+                this.yourCrypto = '';
+                this.zipCode = '';
+            },
+
+            wideRowClass: function () {
+                if (this.offerType === 'exch') {
+                    return 'col-xl-12'
+                } else {
+                    return 'col-xl-6'
+                }
+            },
+            changePriceType: function () {
+                if (this.priceType === 'dynamic') {
+                    this.price = '';
+                }
+            },
+            getCryptoObj: function (id) {
+                let returnObj = '';
+                this.cryptoCurrencies.forEach(oneCrypto => {
+                    if (oneCrypto.id === id) {
+                        returnObj = oneCrypto;
+                    }
+                })
+                return returnObj
+            },
+            getFiatObj: function (id) {
+                let returnObj = '';
+                this.fiatCurrencies.forEach(oneFiat => {
+                    if (oneFiat.id === id) {
+                        returnObj = oneFiat;
+                    }
+                })
+                return returnObj
+            },
+            postOfferForm: function (event) {
+
+                this.validationFields = [];
+
+                try {
+                    this.bootStrapSelectLink.crypto.removeClass('warningInput');
+                    this.bootStrapSelectLink.currency.removeClass('warningInput');
+                    this.bootStrapSelectLink.percent.removeClass('warningInput');
+                    this.bootStrapSelectLink.yourCrypto.removeClass('warningInput');
+                } catch (e) {
+                    // error is ok
+                    console.log('e unset valid classes, catched error is OK:', e.message)
+                }
+
+
+                if ($.isNumeric(this.choosedCryptoId) === false || parseInt(this.choosedCryptoId) < 1) {
+
+                    if (this.bootStrapSelectLink.crypto === '') {
+                        this.bootStrapSelectLink.crypto = $("button[title='<%= _lt.get('Choose cryptocurrency') %>']");
+                        this.bootStrapSelectLink.crypto.addClass('warningInput');
+                    }
+                    swal("<%=_lt.get('Please select Crypto')%>", '', 'error');
+                    return;
+                }
+
+                if (isNaN(+(this.deposite))) {
+                    this.validationFields.push('deposite')
+                    $('.deposite').addClass('warningInput')
+                    swal("<%=_lt.get('Your deposit not number')%>", '', 'error')
+                    return;
+                } else {
+                    if (this.deposite === '' || parseFloat(this.deposite) <= 0) {
+                        this.validationFields.push('deposite')
+                        $('.deposite').addClass('warningInput')
+                        swal("<%=_lt.get('You need specify Deposit')%>", "<%=_lt.get('The maximum number')%>", 'error')
+                        return;
+                    }
+                }
+
+                if (this.descr === '' || this.descr.length < 3) {
+                    this.validationFields.push('descr')
+                    swal("<%=_lt.get('Very short description.')%>", "<%=_lt.get('Make sense. Add text.')%>", 'error');
+                    return;
+                }
+
+
+                if (this.offerTitle === '' || this.offerTitle.length < 3) {
+                    this.validationFields.push('offerTitle')
+                    swal("<%=_lt.get('Very short offer title.')%>", "<%=_lt.get('Make sense. Add text.')%>", 'error');
+                    return;
+                }
+
+
+                if (!this.city || typeof this.city !== 'string' || this.city.length < 1) {
+                    this.validationFields.push('city')
+                    swal("<%=_lt.get('Please correctly type geo')%>", "<%=_lt.get('Use only values drop-down')%>", 'error');
+                    return;
+                }
+
+                if (!this.countryName || typeof this.countryName !== 'string' || this.countryName.length < 1) {
+                    this.validationFields.push('city')
+                    swal("<%=_lt.get('Please correctly type geo')%>", "<%=_lt.get('Some mistake definition')%>", 'error');
+                    return;
+                }
+                if (!this.countryCode || typeof this.countryCode !== 'string' || this.countryCode.length < 1) {
+                    this.validationFields.push('city')
+                    swal("<%=_lt.get('Please correctly type geo')%>", "<%=_lt.get('Some mistake definition')%>", 'error');
+                    return;
+                }
+
+                if (this.offerType === 'wts' || this.offerType === 'wtb') {
+                    if ($.isNumeric(this.choosedFiatId) === false || parseInt(this.choosedFiatId) < 1) {
+                        if (this.bootStrapSelectLink.currency === '') {
+                            this.bootStrapSelectLink.currency = $("button[title='<%= _lt.get('Choose cryptocurrency') %>']");
+                            this.bootStrapSelectLink.currency.addClass('warningInput');
+                        }
+                        swal("<%=_lt.get('Please select Fiat currency.')%>", '', 'error');
+                        return;
+                    }
+
+
+                    if (this.priceType === 'dynamic') {
+                        if (this.possiblePercent === '') {
+
+                            if (this.bootStrapSelectLink.percent === '') {
+                                this.bootStrapSelectLink.percent = $("button[title='<%= _lt.get('Choose cryptocurrency') %>']");
+                                this.bootStrapSelectLink.percent.addClass('warningInput');
+                            }
+
+                            swal("<%=_lt.get('Select dynamic price value.')%>", "<%=_lt.get('You selected a dynamic pr')%>")
+                            return;
+                        }
+                    } else if (this.priceType === 'fixed') {
+                        if (this.price === '' || $.isNumeric(this.price) === false || parseFloat(this.price) <= 0) {
+                            this.validationFields.push('price')
+                            swal("<%=_lt.get('Enter a price greater zero')%>", '', 'error')
+                            return;
+                        }
+                    }
+
+
+                    if (this.paymentBank === false && this.paymentMeet === false && this.paymentDigital === false) {
+                        swal("<%=_lt.get('Select payment methods.')%>", '', 'error');
+                        return;
+                    }
+                }
+
+
+                if (this.offerType === 'exch') {
+                    if (this.paymentBank === false && this.paymentMeet === false && this.paymentDigital === false && this.paymentInternal === false) {
+                        swal("<%=_lt.get('Select payment methods.')%>", '', 'error');
+                        return;
+                    }
+
+                    if (this.price === '' || $.isNumeric(this.price) === false || parseFloat(this.price) <= 0) {
+                        this.validationFields.push('price')
+                        swal("<%=_lt.get('Enter a price greater zero')%>", '', 'error')
+                        return;
+                    }
+
+                    if ($.isNumeric(this.yourCrypto) === false || parseInt(this.yourCrypto) < 1) {
+
+                        if (this.bootStrapSelectLink.yourCrypto === '') {
+                            this.bootStrapSelectLink.yourCrypto = $("button[title='<%= _lt.get('Choose cryptocurrency') %>']");
+                            this.bootStrapSelectLink.yourCrypto.addClass('warningInput');
+                        }
+
+                        swal("<%=_lt.get('Please select Crypto')%>", '', 'error');
+                        return;
+                    }
+                }
+
+                if (this.alreadyRegistered === 'no' && !this.userObj.uHash) {
+                    if (this.firstName === '' || this.firstName.length <= 1) {
+                        this.validationFields.push('firstName')
+                        swal("<%=_lt.get('Please enter your name.')%>", '', 'error')
+                        return;
+                    }
+
+                    if (this.lastName === '' || this.lastName.length <= 1) {
+                        this.validationFields.push('lastName')
+                        swal("<%=_lt.get('Please enter your surname.')%>", '', 'error')
+                        return;
+                    }
+                }
+
+                if (this.alreadyRegistered === 'yes') {
+                    if (this.password === '' || this.password.length < 6) {
+                        this.validationFields.push('password')
+                        swal("<%=_lt.get('Enter the password')%>", "<%=_lt.get('Attention, it must be more 6')%>", 'error')
+                        return;
+                    }
+                }
+
+                if ((this.email === '' || this.email.length <= 3 || this.email.includes('@') === false || this.email.includes('.') === false) && !this.userObj.uHash) {
+                    this.validationFields.push('email')
+                    swal("<%=_lt.get('Please enter your email.')%>", '', 'error')
+                    return;
+                }
+
+                // so validation complete
+                this.$data.user = this.userObj;
+                this.isPosting = true;
+                socket.emit('postOffer', this.$data, (error, response) => {
+                    if(this.isPosting) {
+                        if (error) {
+
+                            if (error === 'noSuchUser') {
+                                this.validationFields.push('password')
+                                swal("<%=_lt.get('Incorrect password')%>", "<%=_lt.get('Incorrect email/password')%>", 'error')
+                            } else if (error === 'emailAlready') {
+                                this.validationFields.push('email')
+                                swal("<%=_lt.get('Error')%>", "<%=_lt.get('This email use another')%>", 'error')
+                            } else {
+                                swal("<%=_lt.get('Error')%>", error, 'error')
+                            }
+                        } else {
+                            if (typeof response === 'object' && response.hasOwnProperty('uHash')) {
+                                Cookies.set('uHashL', response.uHash, { expires: 365 });
+                                this.$root.$emit('updateUserObj', response);
+                            }
+
+                            swal("<%=_lt.get('Successfully posted!')%>", "<%=_lt.get('Now you will receive e-mail')%>", 'success')
+                                .then(hm => {
+                                    $('select').val('');
+                                    $('.qqSelect').selectize('refresh');
+                                    $('.thisTry').selectpicker('refresh');
+                                    this.reset();
+                                    document.postForm.reset();
+                                })
+                                .then(hm => {
+                                    $(".fiatCurrency .thisTry button").removeClass('warningInput');
+                                    $(".price .thisTry button").removeClass('warningInput');
+                                    $(".offerShortTitle").removeClass('warningInput');
+                                    $(".descr").removeClass('warningInput');
+                                    $(".deposite").removeClass('warningInput');
+                                    $(".price input").removeClass('warningInput');
+                                })
+                                .then(hm => {
+                                    this.$root.$emit('goToPageEmit', 'main');
+                                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                                })
+                        }
+                        this.isPosting = false;
+                    }
+                })
+            }
+        },
+        computed: {
+            sloganVariation: function () {
+                let returnObj = {};
+
+                if (this.offerType === 'wts') {
+                    returnObj.offerTitle = "<%=_lt.get('e.g. Sell Bitcoin at')%>";
+                    returnObj.deposite = "<%=_lt.get('How many coins do you sell')%>";
+                    returnObj.cryptoHeading = "<%=_lt.get('You sell cryptocurrency')%>";
+                    returnObj.depositePlace = "<%=_lt.get('e.g. 0.5, your deposite')%>";
+                } else if (this.offerType === 'wtb') {
+                    returnObj.offerTitle = "<%=_lt.get('e.g. Buy Bitcoin at')%>";
+                    returnObj.deposite = "<%=_lt.get('How many coins do you buy')%>";
+                    returnObj.cryptoHeading = "<%=_lt.get('You buy cryptocurrency')%>";
+                    returnObj.depositePlace = "<%=_lt.get('e.g. 15.5, your')%>";
+                } else if (this.offerType === 'exch') {
+                    let cryptoName = '*choose_crypto*'
+                    this.cryptoCurrencies.forEach(oneCrypto => {
+                        if (oneCrypto.id === this.yourCrypto) {
+                            cryptoName = oneCrypto.name
+                        }
+                    })
+
+                    if (cryptoName !== '*choose_crypto*') {
+                        returnObj.offerTitle = "<%=_lt.get('e.g. Exchange')%> " + cryptoName + " <%=_lt.get('to')%> " + 'Ethereum';
+                    } else {
+                        returnObj.offerTitle = "<%=_lt.get('e.g. Exchange')%> " + 'Bitcoin' + " <%=_lt.get('to')%> " + 'Ethereum';
+                    }
+                    returnObj.deposite = "<%=_lt.get('How many coins (in')%>" + cryptoName + "<%=_lt.get(') do you want to exchange?')%>";
+                    returnObj.cryptoHeading = "<%=_lt.get('You want to exchange')%>";
+                    returnObj.depositePlace = "<%=_lt.get('e.g. 10.5')%>";
+                }
+
+                return returnObj;
+            },
+            choosedFiatShortCode: function () {
+                let retVal = '';
+                this.fiatCurrencies.forEach(elem => {
+                    if (elem.id === this.choosedFiatId) {
+                        retVal = elem.short_name;
+                    }
+                })
+                return retVal;
+            },
+            priceExplantation: function () {
+                if (this.offerType === 'exch') {
+                    if (this.getCryptoObj(this.yourCrypto) === '') {
+                        return "<%=_lt.get('Please choose sell')%>"
+                    } else if (this.getCryptoObj(this.choosedCryptoId) === '') {
+                        return "<%=_lt.get('Please choose buy')%>"
+                    } else if (this.yourCrypto === this.choosedCryptoId) {
+                        return "<%=_lt.get('You must specify diff crypto')%>"
+                    } else {
+                        return "<%=_lt.get('How much')%>" + (this.getCryptoObj(this.yourCrypto)).name + "<%=_lt.get('you want to spend for 1')%>" + (this.getCryptoObj(this.choosedCryptoId)).name + "?";
+                    }
+
+                } else {
+                    if (this.priceType === 'fixed') {
+                        return this.translate.estimatePrice
+                    } else if (this.priceType === 'dynamic') {
+                        return this.translate.marketPriceDescr
+                    }
+                }
+            },
+            placeholderPrice: function () {
+                let price = "<%=_lt.get('Only numbers')%>";
+                if (this.priceType === 'dynamic') {
+                    price = "<%=_lt.get('Select currencies')%>"
+                }
+
+                if (this.offerType !== 'exch') {
+                    this.cryptoCurrencies.forEach(elem => {
+                        if (elem.id === this.choosedCryptoId) {
+
+
+                                this.fiatCurrencies.forEach(oneFiat => {
+                                    if (oneFiat.id === this.choosedFiatId) {
+                                        if (oneFiat.short_name === 'EUR') {
+                                            price = "<%=_lt.get('Avg. market price is:')%>" + elem.rateToEur;
+                                        } else if (oneFiat.short_name === 'USD') {
+                                            price = "<%=_lt.get('Avg. market price is:')%>" + elem.rateToUsd;
+                                        } else if (oneFiat.short_name === 'RUB') {
+                                            price = "<%=_lt.get('Avg. market price is:')%>" + elem.rateToRub;
+                                        } else if (oneFiat.short_name === 'CZK') {
+                                            price = "<%=_lt.get('Avg. market price is:')%>" + elem.rateToCzk;
+                                        } else if (oneFiat.short_name === 'NZD') {
+                                            price = "<%=_lt.get('Avg. market price is:')%>" + elem.rateToNzd;
+                                        } else if (oneFiat.short_name === 'AUD') {
+                                            price = "<%=_lt.get('Avg. market price is:')%>" + elem.rateToAud;
+                                        }
+
+                                    }
+                                })
+                        }
+                    })
+                    return price;
+                } else {
+                    return "<%=_lt.get('Enter exchange rate')%>"
+                }
+            }
+        },
+        watch: {
+            choosedFiatId: function (newId, oldId) {
+                if(newId) {
+                    $(".fiatCurrency .thisTry button").removeClass('warningInput');
+                } else {
+                    $(".fiatCurrency .thisTry button").addClass('warningInput');
+                }
+            },
+
+            possiblePercent: function (newPer, oldPer) {
+                if(newPer) {
+                    $(".price .thisTry button").removeClass('warningInput');
+                } else {
+                    $(".price .thisTry button").addClass('warningInput');
+                }
+            },
+
+            offerTitle: function (newTitle, oldTitle) {
+                if(newTitle) {
+                    $(".offerShortTitle").removeClass('warningInput');
+                } else {
+                    $(".offerShortTitle").addClass('warningInput');
+                }
+            },
+
+            descr: function (newDes, oldDes) {
+                if(newDes) {
+                    $(".descr").removeClass('warningInput');
+                } else {
+                    $(".descr").addClass('warningInput');
+                }
+            },
+
+            deposite: function (newPer, oldPer) {
+                if(newPer) {
+                    $(".deposite").removeClass('warningInput');
+                } else {
+                    $(".deposite").addClass('warningInput');
+                }
+            },
+
+            price: function (newPr, oldPr) {
+                if(newPr) {
+                    $(".price input").removeClass('warningInput');
+                } else {
+                    $(".price input").addClass('warningInput');
+                }
+            },
+        },
+        mounted() {
+            // load all crypto
+
+            $("#upload-button-post-offer").on('click', function () {
+                $("#file-upload-post-offer").click();
+            });
+
+            socket.emit('getCryptoCurrenciesAndFiats', (error, obj) => {
+                if (error) {
+                    alert(error)
+                } else {
+                    this.fiatCurrencies = obj.fiatCurrencies;
+                    this.cryptoCurrencies = obj.currencies;
+                    this.$nextTick(() => {
+                        $('.thisTry').selectpicker()
+                        $('.qqSelect').selectize();
+                        $('#chooseCryptocurrency').selectpicker('refresh');
+                        $('#chooseCryptocurrencyExch').selectpicker('refresh');
+                    })
+                }
+            })
+
+            tippy('[data-tippy-placement]', {
+                delay: 100,
+                arrow: true,
+                arrowType: 'sharp',
+                size: 'regular',
+                duration: 200,
+
+                // 'shift-toward', 'fade', 'scale', 'perspective'
+                animation: 'shift-away',
+
+                animateFill: true,
+                theme: 'dark',
+
+                // How far the tooltip is from its reference element in pixels
+                distance: 10,
+
+            });
+
+            if (window.autocomplete) {
+                window.autocomplete = null;
+            }
+
+            if (window.google) {
+                window.google = null;
+            }
+
+            // Link to Register Tab
+            $('.register-tab').on('click', function (event) {
+                event.preventDefault();
+                $(".popup-tab-content").hide();
+                $("#register.popup-tab-content").show();
+                $("body").find('.popup-tabs-nav a[href="#register"]').parent("li").click();
+            });
+
+            $('.popup-with-zoom-anim').magnificPopup({
+                type: 'inline',
+
+                fixedContentPos: false,
+                fixedBgPos: true,
+
+                overflowY: 'auto',
+
+                closeBtnInside: true,
+                preloader: false,
+
+                midClick: true,
+                removalDelay: 300,
+                mainClass: 'my-mfp-zoom-in'
+            });
+        }
+    }));
+</script>

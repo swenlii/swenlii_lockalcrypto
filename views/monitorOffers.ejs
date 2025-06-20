@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+   <head>
+      <meta charset="utf-8" />
+      <title>Monitor of Offers</title>
+   </head>
+   <body>
+      <p>
+         Offers.
+      </p>
+      <p id = "text"></p>
+
+      <table id = "table-offers" style="border: #1C1C1C 1px solid"></table>
+      <br>
+      <input value="Update" onclick="vote()" type="button" />
+
+      <script>
+         var currencies = <%-locals.currencies%>;
+         var error = <%-locals.error%>;
+         var offers = <%-locals.offers%>;
+
+         function getXmlHttp(){
+            var xmlhttp;
+            try {
+               xmlhttp = new ActiveXObject("Msxml2.XMLHTTP");
+            } catch (e) {
+               try {
+                  xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
+               } catch (E) {
+                  xmlhttp = false;
+               }
+            }
+            if (!xmlhttp && typeof XMLHttpRequest!='undefined') {
+               xmlhttp = new XMLHttpRequest();
+            }
+            return xmlhttp;
+         }
+
+         function vote() {
+            var req = getXmlHttp()
+            req.onreadystatechange = function() {
+               if (req.readyState === 4) {
+                  if(req.status === 200) {
+                     currencies = JSON.parse(req.responseText);
+                     initial();
+                  }
+                  else {
+                     error = req.responseText;
+                     initial();
+                  }
+               }
+            }
+            req.open('GET', '/get-currencies', true);
+            req.send(null);
+         }
+
+         function initial() {
+            if(!error){
+               console.log('error not')
+               var tableOffers = document.getElementById('table-offers');
+               var htmlCode = '<tr><td style="border: #1C1C1C 1px solid">ID</td><td style="border: #1C1C1C 1px solid">Title</td><td style="border: #1C1C1C 1px solid">Deposite</td><td style="border: #1C1C1C 1px solid">Percent</td><td style="border: #1C1C1C 1px solid">Price for one</td></tr>'
+               for(var i = 0; i < offers.length; i++){
+                  htmlCode += '<tr><td style="border: #1C1C1C 1px solid">' + offers[i].id + '</td><td style="border: #1C1C1C 1px solid">' + offers[i].short_title + '</td><td style="border: #1C1C1C 1px solid">' + offers[i].max_deposite + '</td><td style="border: #1C1C1C 1px solid">';
+                  if (offers[i].priceType === 'dynamic'){
+                     htmlCode += offers[i].dynamicPercent + '</td><td style="border: #1C1C1C 1px solid">'
+                     for (var j = 0; j < currencies.length; j ++){
+                        if (currencies[j].short_code === offers[i].short_code){
+                           if (offers[i].fiatShortName === 'USD'){
+                              htmlCode+=currencies[j].rateToUsd;
+                           } else if (offers[i].fiatShortName === 'EUR'){
+                              htmlCode+=currencies[j].rateToEur;
+                           } else if (offers[i].fiatShortName === 'RUB'){
+                              htmlCode+=currencies[j].rateToRub;
+                           } else if (offers[i].fiatShortName === 'CZK'){
+                              htmlCode+=currencies[j].rateToCzk;
+                           } else if (offers[i].fiatShortName === 'NZD'){
+                              htmlCode+=currencies[j].rateToNzd;
+                           } else if (offers[i].fiatShortName === 'AUD'){
+                              htmlCode+=currencies[j].rateToAud;
+                           } else {
+                              htmlCode+=currencies[j].rateToUsd + 'USD';
+                           }
+                        }
+                     }
+                  }
+                  else {
+                     htmlCode += 'Fixed</td><td style="border: #1C1C1C 1px solid">' + offers[i].exchange_rate;
+                  }
+                  htmlCode += '</td></tr>';
+               }
+               tableOffers.innerHTML = htmlCode;
+
+               //document.getElementById("text").innerHTML = JSON.stringify(offers);
+            }
+            else {
+               document.getElementById("text").innerHTML = error;
+            }
+         }
+
+         window.setTimeout(vote, 3 * 60 * 1000);
+         initial();
+
+      </script>
+   </body>
+</html>

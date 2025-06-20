@@ -1,0 +1,33 @@
+<template id="approvePage">
+    <div class="dashboard-content-container">
+        <div class="dashboard-content-inner">
+
+            <!-- Row -->
+            <div class="row">
+                <div class="col-xl-12">
+                    <div class="section-headline margin-top-55 margin-bottom-25">
+                        <h4 v-if="status === 'yes'"><%=_lt.get('Success Approve Offer Post')%></h4>
+                        <h4 v-else><%=_lt.get('Some error')%></h4>
+                    </div>
+                    <p v-if="status === 'yes'"><%=_lt.get('Your offer successfully')%></p>
+                    <p v-else><%=_lt.get('No offer confirmed')%></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
+
+<script type="text/javascript">
+    Vue.component('approve-page', {
+        name: 'approvePage',
+        template: '#approvePage',
+        data: function () {
+            return {
+                status: Cookies.get('approveStatus')
+            }
+        },
+        beforeDestroy: function () {
+            Cookies.remove('approveStatus');
+        }
+    });
+</script>

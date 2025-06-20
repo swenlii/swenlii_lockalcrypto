@@ -1,0 +1,53 @@
+<% include headers/baseHeader.ejs %>
+<script src="/js/_profileController.js"></script>
+
+<div id='topMenu'></div>
+
+<section class="baseContent">
+<label>
+    Set your name:
+    <input type="text" name="name" placeholder="<%= namePlaceholder %>" id="name" />
+</label>
+<br />
+
+
+    <label>
+        Set your new email (must be verified):
+        <input type="text" name="email" placeholder="<%= emailPlaceholder %>" id="email" />
+    </label>
+    <br />
+
+
+    <label>
+        Select country:
+        <select name="country" id="country">
+            <% if (locals.countries) {
+                countries.forEach(function (oneCountry) { %>
+                    <option value="<%= oneCountry.id %>"
+                            <% if (oneCountry.id == userObj.country_id) { %>
+                                selected
+                            <% }%>
+                    ><%= oneCountry.country_name %></option>
+            <%    })
+            }
+            %>
+
+        </select>
+    </label>
+    <br /><br />
+
+    <input type="button" value="Save changes" onclick="saveChanges();" />
+
+    <br/><br/>
+    Your private key is: <span><%= locals.userObj.user_hash %></span>
+    <p>1. If you loose this key -> you loose your account if your account has no linked email (with email it is recoverable)<br />
+        2. If you want to login your account from another device -> use this private key.
+
+    </p> <br />
+    <p>So, you can use our website fully anonymously without linked email and other personal email, just keep in safe private key.</p>
+</section>
+
+
+
+
+<% include footers/baseFooter.ejs %>

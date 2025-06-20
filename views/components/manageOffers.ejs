@@ -1,0 +1,243 @@
+<script type="text/javascript">
+    Vue.component('manage-offers', {
+        name: 'manageOffers',
+        props: ['userObj', 'offers', 'cryptoFiatRatesArr'],
+        template: `<% include manageOffers.vue %>`,
+        data: function () {
+            return {
+                linkOnMonitor: '',
+                offerEdit: {},
+            }
+        },
+        methods: {
+            yourchosen: function (type, needNumOffer) { // recount of offers of a specific type
+                let chosenOffers = 0, numOffers = 0, chosenAll = 0;
+                for (let i = 0; i < this.offers.length; i++) {
+                    if (this.offers[i].isChoosen) chosenAll++;
+                    if (this.offers[i].offerType === type) {
+                        numOffers += 1;
+                        if (this.offers[i].isChoosen) {
+                            chosenOffers++;
+                        }
+                    }
+                }
+                if (chosenAll === 0) {
+                    this.linkOnMonitor = '';
+                }
+                if (!needNumOffer) {
+                    return chosenOffers !== 0; // if you need the total number of offers of the type
+                } else return numOffers; // if you need the number of selected offers of the type
+            },
+            showOnTV: function (type) { // monitor link generation
+                var link = "localcrypto.cloud/monitor-offers/";
+
+                var offersIdArr = [];
+                for (let i = 0; i < this.offers.length; i++) {
+                    if (this.offers[i].isChoosen) {
+                        offersIdArr.push(this.offers[i].id);
+                    }
+                }
+                var encode = encodeURIComponent(JSON.stringify(offersIdArr)); // create a string from the object and encode it
+                this.linkOnMonitor = link + encode;
+
+                if (type === 'wtb') $('#link-wtb').css('display', 'block');
+                if (type === 'wts') $('#link-wts').css('display', 'block');
+                if (type === 'wte') $('#link-wte').css('display', 'block');
+            },
+            deleteOneOffer(id, isOpenDeal) {
+                Swal.fire({
+                    title: "<%= _lt.get('Are you sure delete offer?') %>",
+                    text: "<%= _lt.get('You wont revert this!') %>",
+                    type: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#808080',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: "<%= _lt.get('Yes, delete it!') %>"
+                }).then((result) => {
+                    if (result.value) {
+                        if (isOpenDeal !== 0) {
+                            socket.emit('deleteOffer', id, (error, success) => {
+                                if (error) {
+                                    swal("<%= _lt.get('Error') %>", error, 'error')
+                                } else {
+
+                                    swal("<%= _lt.get('Success') %>", "<%= _lt.get('Your offer has been deleted') %>", 'success')
+                                        .then(answer => {
+                                            let newOffersArr = this.offersArr.filter((item) => {
+                                                return item.id !== id
+                                            })
+                                            this.offersArr = newOffersArr;
+                                        })
+                                }
+                            })
+                        } else {
+                            swal("<%= _lt.get('Error') %>", "<%= _lt.get('Removal is not possible') %>", 'error')
+                        }
+                    }
+                })
+            },
+            deleteOffers() {
+                var offersIdArr = [];
+                for (let i = 0; i < this.offers.length; i++) {
+                    if (this.offers[i].isChoosen) {
+                        offersIdArr.push({id: this.offers[i].id, isOpenDeal: !this.offers[i].closedDeal});
+                    }
+                }
+
+                Swal.fire({
+                    title: "<%= _lt.get('Are you sure delete offer?') %>",
+                    text: "<%= _lt.get('You wont revert this!') %>",
+                    type: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#808080',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: "<%= _lt.get('Yes, delete it!') %>"
+                }).then((result) => {
+                    if (result.value) {
+                        for (var i = 0; i < offersIdArr.length; i++) {
+                            if (offersIdArr[i].isOpenDeal !== 0) {
+                                socket.emit('deleteOffer', offersIdArr[i].id, (error, success) => {
+                                    if (error) {
+
+                                        swal("<%= _lt.get('Error') %>", error, 'error')
+                                    } else {
+
+                                        swal("<%= _lt.get('Success') %>", "<%= _lt.get('Your offer has been deleted') %>", 'success')
+                                            .then(answer => {
+                                                const newOffersArr = this.offersArr.filter((item) => {
+                                                    return item.id !== offersIdArr[i].id
+                                                })
+                                                this.offersArr = newOffersArr;
+                                            })
+                                    }
+                                })
+                            } else {
+                                swal("<%= _lt.get('Error') %>", "<%= _lt.get('Removal is not possible') %>", 'error')
+                            }
+                        }
+                    }
+                })
+            },
+            editOffer(offer) {
+                this.offerEdit = offer;
+                $('#dynamic-percent').val(offer.dynamicPercent).change();
+            },
+            changeOffer(event) {
+                event.preventDefault();
+                let offer = {
+                    id: this.offerEdit.id,
+                    title: $('#title-offer').val(),
+                    description: $('#description-offer').val(),
+                    deposite: $('#deposite-offer').val(),
+                    exchange_rate: $('#exchange_rate-offer').val(),
+                    dynamicPercent: $('#dynamic-percent').val(),
+                    can_buy_only_all: $('#can_buy_only_all').is(':checked') ? 1 : 0,
+                    payments_bank: $('#paymentBankEdit').is(':checked') ? 1 : 0,
+                    payments_personal: $('#paymentMeetEdit').is(':checked') ? 1 : 0,
+                    payments_paypal_etc: $('#paymentDigitalEdit').is(':checked') ? 1 : 0,
+                    payments_internal: $('#paymentInternalEdit').is(':checked') ? 1 : 0,
+                }
+
+                socket.emit('updateOffer', offer, (error, response) => {
+                    if (error) {
+                        swal("<%= _lt.get('Error') %>", error, 'error')
+                    } else {
+                        if (response.affectedRows === 0) {
+                            swal("<%= _lt.get('Error') %>", 'Offer not updating', 'warning')
+                        } else {
+                            swal("<%= _lt.get('Sucess') %>", 'You change your offer!', 'success')
+                        }
+
+                        $.magnificPopup.close();
+                        console.log(response)
+                    }
+                });
+                console.log(JSON.stringify(offer));
+            },
+            priceFormatted: function (offerObj) {
+                if (offerObj.priceType === 'dynamic') {
+                    let percent = '+0';
+
+                    if (offerObj.dynamicPercent !== 'zero') {
+                        percent = offerObj.dynamicPercent.replace('m', '-');
+                        percent = percent.replace('p', '+')
+                    }
+
+                    let lastPrice = 0;
+                    if (this.cryptoFiatRatesArr) {
+                        for (var i = 0; i < this.cryptoFiatRatesArr.length; i++) {
+                            if (this.cryptoFiatRatesArr[i].short_code === offerObj.short_name) {
+                                if (offerObj.short_name === 'USD') {
+                                    lastPrice = this.cryptoFiatRatesArr[i].rateToUsd;
+                                } else if (offerObj.short_name === 'EUR') {
+                                    lastPrice = this.cryptoFiatRatesArr[i].rateToEur;
+                                } else if (offerObj.short_name === 'RUB') {
+                                    lastPrice = this.cryptoFiatRatesArr[i].rateToRub;
+                                } else if (offerObj.short_name === 'CZK') {
+                                    lastPrice = this.cryptoFiatRatesArr[i].rateToCzk;
+                                } else if (offerObj.short_name === 'NZD') {
+                                    lastPrice = this.cryptoFiatRatesArr[i].rateToNzd;
+                                } else if (offerObj.short_name === 'AUD') {
+                                    lastPrice = this.cryptoFiatRatesArr[i].rateToAud;
+                                }
+                            }
+                        }
+                    }
+                    let realPrice = lastPrice;
+                    if (percent !== '+0') {
+                        if (percent.includes("+")) {
+                            let getNumber = percent.replace('+', '');
+                            getNumber = parseInt(getNumber)
+                            realPrice = ((lastPrice / 100) * getNumber) + lastPrice
+                        } else if (percent.includes("-")) {
+                            let getNumber = percent.replace('-', '');
+                            getNumber = parseInt(getNumber)
+                            realPrice = lastPrice - ((lastPrice / 100) * getNumber)
+                        }
+                    }
+                    realPrice = realPrice.trimNum(2);
+                    return {
+                        title: '<%= _lt.get('Dynamic price') %>',
+                        percent: ' (' + percent + ' ' + '<%= _lt.get('from coingecko') %>' + ')',
+                        priceUp: offerObj.symbol + ' ' + realPrice,
+                        priceDown: '1 ' + offerObj.short_code,
+                        priceRawDouble: realPrice
+                    }
+                } else if (offerObj.priceType === 'fixed' && offerObj.offerType === 'exch') {
+                    //if (offerObj.exchange_rate) {
+                    //    let exchange_rate = offerObj.exchange_rate;
+                    //    offerObj.exchange_rate = exchange_rate.trimNum(2);
+                    //}
+                    return {
+                        title: '<%= _lt.get('Fixed price') %>',
+                        percent: null,
+                        priceUp: offerObj.exchange_rate + ' ' + offerObj.short_code,
+                        priceDown: '1 ' + offerObj.symbol,
+                        priceRawDouble: offerObj.exchange_rate
+                    }
+
+                } else {
+                    //if (offerObj.exchange_rate) {
+                    //    let exchange_rate = offerObj.exchange_rate;
+                    //    offerObj.exchange_rate = exchange_rate.trimNum(2);
+                    //}
+                    return {
+                        title: '<%= _lt.get('Fixed price') %>',
+                        percent: null,
+                        priceUp: offerObj.symbol + ' ' + offerObj.exchange_rate,
+                        priceDown: '1 ' + offerObj.short_code,
+                        priceRawDouble: offerObj.exchange_rate
+                    }
+                }
+            },
+        },
+        mounted() {
+            //this.offers = this.offersArr; // uncomment when offers appear in the database
+            console.log(this.cryptoFiatRatesArr)
+            $('#link-wtb').css('display', 'none');
+            $('#link-wts').css('display', 'none');
+            $('#link-wte').css('display', 'none');
+        }
+
+    });
+</script>

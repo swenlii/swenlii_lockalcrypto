@@ -1,0 +1,19 @@
+<% include headers/baseHeader.ejs %>
+<script src="/js/_loginController.js"></script>
+
+<div id='topMenu'></div>
+
+<section class="baseContent">
+
+<p>Enter your private key to login:</p>
+    <form method="post" onsubmit="login(event)">
+        <input type="text" name="privateKey" required placeholder="Enter your private key">
+        <br />
+<input type="submit" value="Login">
+    </form>
+</section>
+
+
+
+
+<% include footers/baseFooter.ejs %>

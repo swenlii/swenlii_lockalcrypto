@@ -1,0 +1,142 @@
+<% include headers/baseHeader.ejs %>
+<script src="/js/_obligationsController.js"></script>
+<div id='topMenu'></div>
+<div id="myContainerElement"></div>
+
+
+<section class="baseListingComissions">
+
+    <h1>Listing of complete deals.</h1>
+    <div class="headListing">
+        <span>Deal</span>
+        <span>Comission %</span>
+        <span>Transaction amount</span>
+        <span>Comission amount</span>
+        <span>Created date</span>
+        <span>Status</span>
+    </div>
+
+    <%
+    var totalEurAmount = 0;
+    var dealsIds = [];
+
+        function transformMoneyToEuro(fiatCode, amount) {
+            if (fiatCode == "EUR") {
+                totalEurAmount = totalEurAmount + amount;
+            } else if (fiatCode == "USD") {
+                totalEurAmount = totalEurAmount + (amount*locals.exchangefromEurObj.usdRate);
+            }
+        }
+
+    function showTransformMoneyToEuro(fiatCode, amount) {
+        if (fiatCode == "EUR") {
+            return "";
+        } else if (fiatCode == "USD") {
+            return "("+(amount*locals.exchangefromEurObj.usdRate)+" EUR)";
+        }
+    }
+
+    function drawProcessingPaymentDiv(paymentObj) {
+        let div = '';
+        if (paymentObj.coinbaseCreatedAt && !paymentObj.coinbaseConfirmedAt && !paymentObj.coinbaseExpired) {
+
+            div = `        <div id="p${paymentObj.id}">
+            <div>Generated invoice number: <b id="invSmallNumber${paymentObj.id}">${paymentObj.id}</b></div>
+            <div>Status: <b>Generated and waiting for payment</b></div>
+            <div>We check your payment every second, don't worry.</div>
+            <div>You have only 1 hour for payment after invoice generation, please consider, that in this time blockchain must confirm your payment.</div>
+            <div>Lost payment link? He is here <b id="pLink${paymentObj.id}"><a href="https://commerce.coinbase.com/checkout/${paymentObj.coinbaseiD}" target="_blank">https://commerce.coinbase.com/checkout/${paymentObj.coinbaseiD}</a></b></div>
+        </div>`;
+        } else if (paymentObj.coinbaseConfirmedAt && !paymentObj.coinbaseExpired) {
+            div = `<div id="p${paymentObj.id}">
+                <div>Generated invoice number: <b id="invSmallNumber${paymentObj.id}">${paymentObj.id}</b></div>
+            <div>Status: <b>Paid!</b></div>
+            </div>`;
+        } else if (paymentObj.coinbaseExpired) {
+            div = `<div id="p${paymentObj.id}">
+                <div>Generated invoice number: <b id="invSmallNumber${paymentObj.id}">${paymentObj.id}</b></div>
+            <div>Status: <b>Expired and canceled!</b></div>
+            </div>`;
+        }
+
+        return div;
+    }
+
+    if (locals.userObligations) {
+
+    userObligations.forEach(function (oneObligation) {
+        var status = "Unpaid";
+        var cssOpacity = '';
+        if (oneObligation.paid == 1) {
+            status = "<b>Paid</b>";
+            cssOpacity = 'cssOpacity3';
+        } else if (oneObligation.reserved == 1)  {
+            status = "<b>Reserved</b>";
+            cssOpacity = 'cssOpacity3';
+        } else {
+            dealsIds.push(oneObligation.sell_deal_id);
+           // console.log(dealsIds);
+        }
+        transformMoneyToEuro(oneObligation.fiat_shortCode, oneObligation.commission_amount);
+    %>
+
+    <div class="classicListing <%=cssOpacity%>" id="obligation<%=oneObligation.sell_deal_id%>">
+        <span><a href="/deals/<%=oneObligation.sell_deal_id%>/"><%=oneObligation.sell_deal_id%></a></span>
+        <span><%=oneObligation.comission_percent%>%</span>
+        <span><%=oneObligation.transaction_amount%> <%=oneObligation.crypto_shortCode%></span>
+        <span><%=oneObligation.commission_amount%> <%=oneObligation.fiat_shortCode%> <%=showTransformMoneyToEuro(oneObligation.fiat_shortCode, oneObligation.commission_amount)%></span>
+        <span><%=oneObligation.superCreateDate%></span>
+        <span id="obStatus<%=oneObligation.sell_deal_id%>"><%-status%></span>
+    </div>
+
+    <%  });
+    %>
+    <div id="totalComission">Total unpaid: <%= totalEurAmount %> EUR.</div>
+    <% if (dealsIds.length > 0) { %>
+    <div id="possilbleOpacityPayButton">
+    <br />
+    <p>You can pay this amount in BitCoin, Ethereum, BitCoin Cash or LiteCoin.</p>
+        <p><strong>Initialize payment only if you want to pay now (payment will reserved for 1 hour)</strong></p>
+    <div id="paymentInitiate"><input id="buttonInit" type="button" value="Initialize payment" onclick="sealPayment('<%= totalEurAmount %>', '<%-JSON.stringify(dealsIds) %>', 4);">
+    <a target="_blank" href="" id="paymentToCoinBase">Pay (you will be redirected)</a>
+    </div>
+    </div>
+        <% } %>
+    <br />
+    <h1>View your invoices:</h1>
+    <div id="processingInvoices">
+        <% if (locals.paymentsList && Array.isArray(locals.paymentsList) && locals.paymentsList.length > 0 )
+        {
+        paymentsList.forEach(function (onePayment) {
+                let div = drawProcessingPaymentDiv(onePayment);
+                %> <%-div%> <%
+            })
+        }
+        %>
+    </div>
+
+
+    <div id="paymentBankInfo">
+        <h1>Your payment order was generated with ID <span id="vsPay"></span> </h1>
+        Please pay on this account: <br />
+        Bank : Bank a.s.<br />
+        SWIFT : DONNGNV<br />
+        IBAN : CDSCDSCD43543 5345 43534<br />
+        VARIABLE SYMBOL: <span id="vsPay2"></span>
+        <br />
+        We will waiting your payment for 7 working days, otherwise we cancel your payment order.
+    </div>
+    <div class="smGr">Rate 1 EUR = <%=locals.exchangefromEurObj.usdRate%> USD.</div>
+    <%
+    }
+    %>
+</section>
+
+<style>
+    #paymentToCoinBase {
+        display: none;
+    }
+</style>
+
+
+<% include footers/baseFooter.ejs %>

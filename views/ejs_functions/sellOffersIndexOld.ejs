@@ -1,0 +1,143 @@
+<% include headers/baseHeader.ejs %>
+<% include ejs_functions/postProcessor.ejs %>
+<script src="/js/FrontIndexController.js"></script>
+
+<div id='topMenu'></div>
+
+<div id='offerGeoList'><%= message %></div>
+
+
+<section id='sellOffersList'>
+    <div id='sellHead'>
+        <span>Cryptocurrency</span>
+        <span>Seller name <br />& country</span>
+        <span class='shortTitle'>Short title</span>
+        <span class='userDeposite'>Maximum user have</span>
+        <span>Exchange rate</span>
+        <span>Payments</span>
+        <span>Action</span>
+    </div>
+
+<%
+function returnPaymentInfo(oneOffer) {
+    var paymentInfo = '';
+    if (oneOffer.payments_bank == 1) {
+        paymentInfo = paymentInfo + "Bank<br />";
+    }
+
+    if (oneOffer.payments_personal == 1) {
+        paymentInfo = paymentInfo + "Personal meeting<br />";
+    }
+
+    if (oneOffer.payments_exchange == 1) {
+        paymentInfo = paymentInfo + "Exchange crypto<br />";
+    }
+
+    if (oneOffer.payments_paypal_etc == 1) {
+        paymentInfo = paymentInfo + "Paypal/Stripe etc<br />";
+    }
+
+    return paymentInfo;
+}
+
+function returnPaymentSelectOptions(oneOffer) {
+    var paymentOptions = '<option value="select" selected="selected">Select...</option>';
+    if (oneOffer.payments_bank == 1) {
+        paymentOptions = paymentOptions + '<option value="bank">Bank</option>';
+    }
+
+    if (oneOffer.payments_personal == 1) {
+        paymentOptions = paymentOptions + '<option value="personal">Personal meeting</option>';
+    }
+
+    if (oneOffer.payments_exchange == 1) {
+        paymentOptions = paymentOptions + '<option value="exchange">Exchange crypto</option>';
+    }
+
+    if (oneOffer.payments_paypal_etc == 1) {
+        paymentOptions = paymentOptions + '<option value="paypal">Paypal/Stripe etc</option>';
+    }
+
+    return paymentOptions;
+}
+
+function formActionButton(oneOffer) {
+    let actionButton = '';
+    if (oneOffer.is_busy == 0) {
+        actionButton = "<a href='#' onclick='showDescrDiv(event, \""+oneOffer.offerId+"\")'>Buy</a>";
+    } else {
+        actionButton = "<b>Offer is busy <br /> by other user.</b>";
+    }
+
+    if (locals.userObj.id == oneOffer.user_id) {
+        actionButton = "<b>Your offer.</b>";
+    }
+    return actionButton;
+}
+
+
+    if (locals.sellOffers) {
+
+    sellOffers.forEach(function (oneOffer) {
+    if (!oneOffer.name) {
+        oneOffer.name = 'Anonymous'+oneOffer.offerInitatorId;
+        var linkToProfile = '<a href="/user/anonymous/'+oneOffer.offerInitatorId+'/">Anonymous'+oneOffer.offerInitatorId+'</a>';
+    } else {
+        var linkToProfile = '<a href="/user/'+oneOffer.name+'/">'+oneOffer.name+'</a>';
+    } %>
+
+    <div id='offerId<%= oneOffer.offerId %>'>
+        <span><%=oneOffer.cryptoName%></span>
+        <span><%-linkToProfile%>, <br /><%=oneOffer.country_name%></span>
+        <span class='shortTitle'><%=oneOffer.short_title%></span>
+        <span class='userDeposite'><%=oneOffer.max_deposite%> <%=oneOffer.short_code%></span>
+        <span>Rate 1 <%=oneOffer.short_code%> = <%=oneOffer.exchange_rate%></span>
+        <span><%- returnPaymentInfo(oneOffer) %></span>
+        <span class='buyButtonListing'><%- formActionButton(oneOffer) %></span>
+
+        <div class='hiddenDescrDiv' id='actionId<%=oneOffer.offerId%>'>
+            <div class='firstLeftBlock'>
+            <div><%=oneOffer.activated_date%></div>
+            <div><%=oneOffer.description%></div>
+            <div class='smallForm'>
+                <label>
+                    Enter how much <%=oneOffer.cryptoName%> you want to buy
+                    <input value='0' autocomplete='off' type='number' step="0.00001" min='0' id='buyCryptoList<%=oneOffer.offerId%>' onchange='calculateInfo(event, this, "<%=oneOffer.exchange_rate%>", "<%=oneOffer.offerId%>", "<%=oneOffer.max_deposite%>", "<%=oneOffer.cryptoName%>")' onkeyup='calculateInfo(event, this, "<%=oneOffer.exchange_rate%>", "<%=oneOffer.offerId%>", "<%=oneOffer.max_deposite%>", "<%=oneOffer.cryptoName%>")'>
+                </label>
+
+            </div>
+            </div>
+            <div class='confirmForm'><h1>Final price: <b id='infoAmount<%= oneOffer.offerId %>'>0</b> <%= oneOffer.short_name %></h1>
+                <label>Choose payment type
+                <select autocomplete='off' class='paymentsOptions' id='paymentsOptions<%= oneOffer.offerId %>' onchange='revealInitiateButton(this, "<%= oneOffer.offerId %>");'>
+                    <%- returnPaymentSelectOptions(oneOffer)%>
+                </select>
+                </label>
+            <input id='initiateButton<%= oneOffer.offerId %>' class='initiateButton' type='button' value='Initiate transaction' onclick='initiateTransaction(this,"<%= oneOffer.offerId %>")'>
+            </div>
+        </div>
+
+        <div id='initiatedTransaction<%= oneOffer.offerId %>'></div>
+    </div>
+
+
+  <%  });
+
+    }
+
+%>
+</section>
+
+<% if (locals.createNewOffer) { %>
+<div id='createNewOffer'>Try to create new offer!
+    <div id="actionsRow">
+
+        <div onclick="createSellOffer();" class="actionButton">Create Sell Offer</div>
+        <div onclick="createBuyOffer();" class="actionButton">Create Buy Offer</div>
+    </div>
+
+    <div id="sellOfferCreation"></div>
+</div>
+<% } %>
+
+<% include footers/baseFooter.ejs %>

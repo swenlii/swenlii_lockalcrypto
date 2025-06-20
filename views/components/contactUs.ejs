@@ -1,0 +1,19 @@
+<script type="text/javascript">
+    Vue.component('contact-us', {
+        name: 'contactUs',
+        template: `<% include contactUs.vue %>`,
+        data: function () {
+            return {
+                name: 'Anonim',
+                email: '',
+                phone: '',
+                message: ''
+            }
+        },
+        mounted: function () {
+            var headerHeight = $("#header-container").outerHeight();
+            var windowHeight = $(window).outerHeight() - headerHeight;
+            $('.dashboard-content-inner').css({ 'min-height': windowHeight });
+        }
+    });
+</script>

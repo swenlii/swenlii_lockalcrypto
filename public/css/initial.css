@@ -1,0 +1,185 @@
+* {
+    margin: 0;
+    padding: 0;
+}
+/*input {*/
+    /*border: 1px solid gainsboro;*/
+    /*padding: 3px;*/
+/*}*/
+
+#offerGeoList {
+    text-align: center
+}
+
+#topMenu {
+    margin-top: 50px;
+    height: 25px;
+}
+#createNewOffer {
+    text-align: center;
+}
+#sellOfferCreation {
+
+}
+#offerDetail label {
+    display: inline-block;
+    margin-top: 10px;
+}
+#offerDetail p {
+    display: block;
+    margin-top: 15px;
+    font-weight: bold;
+}
+#offerDetail input[type=checkbox] {
+    margin-right: 10px;
+}
+
+#actionsRow {
+    margin-bottom: 15px;
+}
+#sellOffersList {
+    max-width: 1150px;
+    margin: 0 auto;
+    margin-top: 15px;
+}
+#sellOffersList div span {
+    min-width: 140px;
+    min-height: 40px;
+    display: inline-block;
+}
+.successOrderInfo {
+    margin-top: 15px;
+    border: 1px solid black;
+}
+.emailInfo {
+    margin-top: 15px;
+}
+#sellHead span {
+    font-weight: bold;
+}
+.shortTitle {
+    width: 200px;
+}
+.userDeposite {
+    width: 200px;
+}
+
+.buyButtonListing {
+
+}
+.buyButtonListing a {
+
+}
+.initiateButton {
+    display: none;
+}
+
+.hiddenDescrDiv {
+    display: none;
+}
+.firstLeftBlock {
+    display: inline-block;
+    width: 47%;
+}
+.confirmForm {
+    display: inline-block;
+    width: 47%;
+}
+.actionButton {
+    border: 1px solid blueviolet;
+    width: 150px;
+    margin: 0 auto;
+    display: inline-block;
+    margin-top: 15px;
+    padding: 5px;
+    cursor: pointer;
+}
+.actionButton:first-child {
+    margin-right: 5px;
+}
+
+#addNewCrypto {
+    margin-top: 10px;
+    display: none;
+}
+.addNewLink {
+    display: block;
+    margin-top: 15px;
+}
+
+
+#sMenu {
+    margin-top: 25px;
+    text-align: center;
+    position: relative;
+}
+
+.baseListing {
+    max-width: 1150px;
+    margin: 0 auto;
+    margin-top: 0px;
+    margin-top: 15px;
+}
+
+.baseContent {
+    max-width: 1150px;
+    margin: 0 auto;
+    margin-top: 0px;
+    margin-top: 15px;
+}
+
+.baseListing div span {
+    min-width: 200px;
+    min-height: 40px;
+    display: inline-block;
+}
+.headListing span {
+    font-weight: bold;
+}
+
+.baseListingComissions {
+    max-width: 1150px;
+    margin: 0 auto;
+    margin-top: 0px;
+    margin-top: 15px;
+}
+
+.baseListingComissions div span {
+    min-width: 180px;
+    min-height: 40px;
+    display: inline-block;
+}
+
+.chatUl li {
+    margin-top: 15px;
+}
+.menuProfile {
+    position: absolute;
+    top: 0px;
+    right: 20%;
+}
+#comissionCalculation {
+    margin-top: 15px;
+    margin-bottom: 15px;
+}
+.mr10 {
+    margin-right: 10px;
+}
+
+#reviewsDiv {
+    display: none;
+}
+
+.smGr {
+    margin-top: 25px;
+    font-size: 10px;
+    color: gray;
+}
+
+#paymentBankInfo {
+    display: none;
+}
+
+.cssOpacity3 {
+    opacity: 0.3;
+}

@@ -1,0 +1,1597 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <!-- Basic Page Needs
+    ================================================== -->
+    <title><%=_lt.get('title')%></title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+    <!-- CSS
+    ================================================== -->
+    <link rel="stylesheet" href="/css/style.css">
+
+    <link rel="stylesheet" href="/css/colors/blue.css">
+    <link rel="stylesheet" href="/css/my.css">
+    <link rel="stylesheet" href="/css/selectize-default.css">
+    <link rel="stylesheet" href="/css/animate.css">
+    <link rel="stylesheet" href="/css/intlTelInput.css">
+
+    <script src="/js/jquery-3.3.1.min.js"></script>
+    <script src="/js/jquery-migrate-3.0.0.min.js"></script>
+    <script src="/js/sweetalert2.all.min.js"></script>
+    <script src="/js/js.cookie.min.js"></script>
+    <script src="/js/vue.js"></script>
+    <script src="/js/socket.js"></script>
+    <script src="/js/intlTelInput.js"></script>
+    <script src="/js/moment.js"></script>
+    <script src="/js/simplebar.min.js"></script>
+
+    <script> var thisUrl = location.protocol + '//' + location.host;
+        var socket = io.connect(thisUrl);
+
+        Number.prototype.trimNum = function(places, rounding) {
+            rounding = rounding || "round";
+            var num = parseFloat(this), multiplier = Math.pow(10, places);
+            return(Number(Math[rounding](num * multiplier) / multiplier));
+        }
+
+    </script>
+    <script src="/js/MyHelper.js"></script>
+    <script src="/js/_GEOModel.js"></script>
+    <script src="/js/_indexController.js"></script>
+    <script src="/js/mmenu.min.js"></script>
+    <script src="/js/popper.min.js"></script>
+    <script src="/js/tippy.min.js"></script>
+    <script src="/js/bootstrap-slider.min.js"></script>
+    <script src="/js/bootstrap-select.min.js"></script>
+    <script src="/js/snackbar.js"></script>
+    <script src="/js/clipboard.min.js"></script>
+    <script src="/js/counterup.min.js"></script>
+    <script src="/js/magnific-popup.min.js"></script>
+    <script src="/js/slick.min.js"></script>
+    <script src="/js/custom.js"></script>
+    <script src="/js/ejs.js"></script>
+    <script src="/js/selectize.js"></script>
+    <script src="/js/businesstime.js"></script>
+    <script src='https://www.google.com/recaptcha/api.js'></script>
+    <script src="/js/vue-social-sharing.min.js"></script>
+
+
+</head>
+<body class="gray">
+<script>
+    Number.prototype.trimNum = function(places, rounding) {
+        rounding = rounding || "round";
+        var num = parseFloat(this), multiplier = Math.pow(10, places);
+        return(Number(Math[rounding](num * multiplier) / multiplier));
+    }
+</script>
+<style>
+    .loading_ball_inside {
+        background-color: rgba(0, 0, 0, 0);
+        border: 5px solid rgba(0, 183, 229, 0.9);
+        opacity: .9;
+        border-top: 5px solid rgba(0, 0, 0, 0);
+        border-left: 5px solid rgba(0, 0, 0, 0);
+        border-radius: 50px;
+        box-shadow: 0 0 35px #2187e7;
+        width: 50px;
+        height: 50px;
+        margin: 0 auto;
+        -moz-animation: spin .5s infinite linear;
+        -webkit-animation: spin .5s infinite linear;
+    }
+
+    .loading_ball_outside {
+        background-color: rgba(0, 0, 0, 0);
+        border: 5px solid rgba(0, 183, 229, 0.9);
+        opacity: .9;
+        border-top: 5px solid rgba(0, 0, 0, 0);
+        border-left: 5px solid rgba(0, 0, 0, 0);
+        border-radius: 50px;
+        box-shadow: 0 0 15px #2187e7;
+        width: 30px;
+        height: 30px;
+        margin: 0 auto;
+        position: relative;
+        top: -50px;
+        -moz-animation: spinoff .5s infinite linear;
+        -webkit-animation: spinoff .5s infinite linear;
+    }
+
+    .loading {
+        position: absolute;
+        /*left: 50%; /*the positioning you're looking for.*/
+        top: 50%; /* edit these values to give you*/
+        display: none;
+
+    }
+
+    @-moz-keyframes spin {
+        0% {
+            -moz-transform: rotate(0deg);
+        }
+        100% {
+            -moz-transform: rotate(360deg);
+        }
+    }
+
+    @-moz-keyframes spinoff {
+        0% {
+            -moz-transform: rotate(0deg);
+        }
+        100% {
+            -moz-transform: rotate(-360deg);
+        }
+    }
+
+    @-webkit-keyframes spin {
+        0% {
+            -webkit-transform: rotate(0deg);
+        }
+        100% {
+            -webkit-transform: rotate(360deg);
+        }
+    }
+
+    @-webkit-keyframes spinoff {
+        0% {
+            -webkit-transform: rotate(0deg);
+        }
+        100% {
+            -webkit-transform: rotate(-360deg);
+        }
+    }
+
+    #inputSearchCrypto {
+
+    }
+
+    #preselectCrypto {
+        display: block;
+        background-color: #fff;
+        font-weight: 500;
+        opacity: 1;
+        list-style: none;
+        padding-left: 0;
+        border-radius: 4px;
+        border: none;
+        box-shadow: 0 1px 4px 0px rgba(0, 0, 0, 0.12);
+        box-sizing: border-box;
+        position: relative;
+        top: -14px;
+
+    }
+
+    #preselectCrypto li span {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+    #preselectCrypto li {
+        border-bottom: 1px solid rgba(128, 128, 128, 0.2);
+        height: 35px;
+        padding-top: 7px;
+    }
+
+    #preselectCrypto li:first-letter {
+        font-weight: bold;
+    }
+
+    #preselectCrypto li:hover {
+        cursor: pointer;
+        background-color: #fbfbfb;
+    }
+
+</style>
+<!-- Wrapper -->
+<div id="wrapper">
+    <!-- Header Container
+    ================================================== -->
+    <header id="header-container" class="fullwidth">
+        <!-- Header -->
+        <div id="header">
+            <div class="container">
+
+                <!-- Left Side Content -->
+                <div class="left-side">
+
+                    <!-- Logo -->
+                    <div id="logo">
+                        <a href="/"><img src="/images/favicon11.png" alt=""></a>
+                    </div>
+
+                    <!-- Main Navigation -->
+                    <nav id="navigation">
+                        <ul id="responsive">
+
+                            <li class="some1"><a href="/" style="padding-bottom: 42px" v-bind:class="{ current: pages[pages.length-1] == 'main' }"><%=_lt.get('Home')%></a>
+                                <!--span></span-->
+                            </li>
+
+                            <li class="some1"><a href="#deals" @click="goToPage('deals')" style="padding-bottom: 42px" v-bind:class="{ current: pages[pages.length-1] == 'deals' }"><%=_lt.get('Your deals')%>
+                                    <span v-if="dealNotifications.length > 0" id="deal-number-notifications" class="header-deal-notifications">{{dealNotifications.length}}</span>
+                                </a>
+                                <!--span></span-->
+                            </li>
+
+                            <li class="some1"><a href="#comissions" style="padding-bottom: 42px" v-bind:class="{ current: pages[pages.length-1] == 'comissions' }"><%=_lt.get('Commissions')%></a>
+                                <!--span></span-->
+                            </li>
+
+                            <li class="some1"><a href="#stats" style="padding-bottom: 42px" v-bind:class="{ current: pages[pages.length-1] == 'stats' }"><%=_lt.get('Statistics')%></a>
+                                <!--span></span-->
+                            </li>
+
+                            <li class="create1"><a href="#post-offer" @click="goToPage('post-offer')" style="padding-bottom: 42px" v-bind:class="{ current: pages[pages.length-1] == 'post-offer' }"><%=_lt.get('Create an offer')%></a>
+                                <!--span></span-->
+                            </li>
+
+                            <li class="create1"><a href="#listing-companies" @click="goToPage('listing-companies')" style="padding-bottom: 42px" v-bind:class="{ current: pages[pages.length-1] == 'listing-companies' }"><%=_lt.get('Catalog of companies')%></a>
+                                <!--span></span-->
+                            </li>
+
+                            <li class="some1"><a style="padding-bottom: 42px" v-bind:class="{ current: pages[pages.length-1] == 'articles' }"><%=_lt.get('Articles')%></a>
+                                <ul class="dropdown-nav">
+                                    <li v-for="article in this.articles"><a v-bind:href="article.href">{{article.headertext.substring(0, 24) + '...'}}</a></li>
+                                </ul>
+                            </li>
+
+                        </ul>
+                    </nav>
+                    <div class="clearfix"></div>
+                    <!-- Main Navigation / End -->
+
+                </div>
+                <!-- Left Side Content / End -->
+
+
+
+                <!--NOTIFICATIONS! -->
+
+
+                <!-- Right Side Content / End -->
+                <div class="right-side">
+
+                    <!--  User Notifications -->
+                    <div class="header-widget hide-on-mobile">
+
+                        <!-- Notifications -->
+                        <div class="header-notifications" id="newNotifs">
+
+                            <!-- Trigger -->
+                            <div class="header-notifications-trigger">
+                                <a href="#"><i class="icon-feather-bell"></i><span>{{newNotifications.length}}</span></a>
+                            </div>
+
+                            <!-- Dropdown -->
+                            <div class="header-notifications-dropdown">
+
+                                <div class="header-notifications-headline">
+                                    <h4><%=_lt.get('Notifications')%></h4>
+                                    <button v-on:click="isNotificationsActive=!isNotificationsActive" class="mark-as-read ripple-effect-dark" title=<%=_lt.get('Mark all as read')%>
+                                    data-tippy-placement="left">
+                                        <i class="icon-feather-check-square" v-bind:class="{notifications: isNotificationsActive}"></i>
+                                    </button>
+                                </div>
+
+                                <div class="header-notifications-content">
+                                    <div class="header-notifications-scroll">
+                                        <ul>
+                                            <!-- Notification -->
+                                            <li v-for="oneNotif in newNotifications" class="notifications-not-read" :key="oneNotif.dealId">
+                                                <a v-bind:href="'#deals'" @click="goToPage('deals', oneNotif.dealId)">
+                                                    <span class="notification-icon"><i
+                                                                class="icon-material-outline-group"></i></span>
+                                                    <span class="notification-text" v-html="oneNotif.testDescrHtml">
+												</span>
+                                                </a>
+                                            </li>
+
+
+
+                                        </ul>
+                                    </div>
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                        <!-- Messages -->
+                        <div class="header-notifications">
+                            <div class="header-notifications-trigger">
+                                <a href="#"><i class="icon-feather-mail"></i><span>3</span></a>
+                            </div>
+
+                            <!-- Dropdown -->
+                            <div class="header-notifications-dropdown">
+
+                                <div class="header-notifications-headline">
+                                    <h4><%=_lt.get('Messages')%></h4>
+                                    <button class="mark-as-read ripple-effect-dark" title=<%=_lt.get('Mark all as read')%>
+                                    data-tippy-placement="left">
+                                        <i class="icon-feather-check-square"></i>
+                                    </button>
+                                </div>
+
+                                <div class="header-notifications-content">
+                                    <div class="header-notifications-scroll">
+                                        <ul>
+                                            <!-- Notification -->
+                                            <li class="notifications-not-read" v-for="(message, index) in messages" v-if="index === messages.length-1 || index === messages.length-2">
+                                                <a href="#deals">
+                                                    <span class="notification-avatar status-online"><img
+                                                                :src="'./images/' + (message.avatarPath ? ('users/' + message.avatarPath) : 'user-avatar-placeholder.png')" alt=""></span>
+                                                    <div class="notification-text">
+                                                        <strong>{{message.userName}}</strong><br>
+                                                        <p class="notification-msg-text">{{message.message}}</p><br>
+                                                        <span class="color">
+                                                            {{moment(new Date(message.time), "YYYYMMDD").fromNow()}}</span>
+                                                    </div>
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+
+                                <a href="#deals"
+                                   class="header-notifications-button ripple-effect button-sliding-icon"><%=_lt.get('View All Messages')%>
+                                    <i class="icon-material-outline-arrow-right-alt"></i>
+                                </a>
+                            </div>
+                        </div>
+
+                    </div>
+                    <!--  User Notifications / End -->
+
+                    <!-- User Menu -->
+                    <div class="header-widget">
+
+                        <!-- Messages -->
+                        <div class="header-notifications user-menu">
+                            <div class="header-notifications-trigger">
+                                <a href="#">
+                                    <div v-bind:class="{ 'status-online': userObj, 'user-avatar': userObj, 'icon-login-in-header': !userObj}">
+                                        <img v-if="userObj" :src="'./images/' + (userObj.avatarPath ? ('users/' + userObj.avatarPath) : 'user-avatar-placeholder.png')" alt="">
+                                        <i v-else class="icon-feather-log-out"></i>
+                                    </div>
+                                </a>
+                            </div>
+
+                            <!-- Dropdown -->
+                            <div class="header-notifications-dropdown">
+
+                                <!-- User Status -->
+                                <div class="user-status" v-if="userObj">
+
+                                    <!-- User Name / Avatar -->
+                                    <div class="user-details">
+                                        <div class="user-avatar status-online"><img
+                                                    :src="'./images/' + (userObj.avatarPath ? ('users/' + userObj.avatarPath) : 'user-avatar-placeholder.png')" alt=""></div>
+                                        <div class="user-name">
+                                            {{profileObj.name}} {{profileObj.surname}}<span>{{profileObj.role}}</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- User Status Switcher -->
+                                    <!--                                    <div class="status-switch" id="snackbar-user-status">-->
+                                    <!--                                        <label class="user-online current-status">Online</label>-->
+                                    <!--                                        <label class="user-invisible">Invisible</label>-->
+                                    <!--                                        &lt;!&ndash; Status Indicator &ndash;&gt;-->
+                                    <!--                                        <span class="status-indicator" aria-hidden="true"></span>-->
+                                    <!--                                    </div>-->
+                                </div>
+
+                                <ul class="user-menu-small-nav">
+                                    <!--                                    <li><a href="dashboard.html"><i class="icon-material-outline-dashboard"></i>-->
+                                    <!--                                            Dashboard</a></li>-->
+                                    <li v-if="userObj && userObj.isCompany && userObj.isCompany === 1"><a href="/#manage-offers" onclick="app.clickOnUserMenu()"><i class="icon-material-outline-business-center"></i>
+                                            <%=_lt.get('Manage Offers')%></a></li>
+                                    <li v-else-if="userObj"><a href="/#offers" onclick="app.clickOnUserMenu()"><i class="icon-material-outline-business-center"></i>
+                                            <%=_lt.get('My Offers')%></a></li>
+                                    <li v-if="userObj"><a href="/#settings" onclick="app.clickOnUserMenu()"><i class="icon-material-outline-settings"></i>
+                                            <%=_lt.get('Settings')%></a></li>
+                                    <li v-if="userObj"><a href="/logout/" onclick="app.clickOnUserMenu()"><i
+                                                    class="icon-material-outline-power-settings-new"></i><%=_lt.get('Logout')%></a>
+                                    </li>
+                                    <li v-if="!userObj"><a href="#sign-in-dialog" onclick="app.clickOnUserMenu()" class="popup-with-zoom-anim"><i
+                                                    class="icon-feather-log-out"></i><%=_lt.get('Log in')%></a>
+                                    </li>
+                                    <li v-if="!userObj"><a href="#sign-in-dialog"  onclick="app.clickOnUserMenu()" class="popup-with-zoom-anim register-tab"><i
+                                                    class="icon-material-outline-group"></i><%=_lt.get('Sign up')%></a>
+                                    </li>
+                                </ul>
+
+                            </div>
+                        </div>
+
+                    </div>
+                    <!-- User Menu / End -->
+
+                    <!-- Mobile Navigation Button -->
+                    <span class="mmenu-trigger">
+					<button class="hamburger hamburger--collapse" type="button">
+						<span class="hamburger-box">
+							<span class="hamburger-inner"></span>
+						</span>
+					</button>
+				</span>
+
+                </div>
+                <!-- Right Side Content / End -->
+
+            </div>
+        </div>
+        <!-- Header / End -->
+
+    </header>
+    <div class="clearfix"></div>
+    <!-- Header Container / End -->
+
+    <listing-offers v-show="whatPageToShow === 'main'" ref="listingOffers" v-bind:user-obj="userObj" v-bind:crypto-fiat-rates-arr="cryptoFiatRatesArr"></listing-offers>
+    <post-offer v-show="whatPageToShow === 'post-offer'" ref="postOffer" v-bind:user-obj="userObj"></post-offer>
+    <approve-page v-if="whatPageToShow === 'approve-page'" ref="approvePage" v-bind:user-obj="userObj"></approve-page>
+    <apply-offer v-if="whatPageToShow === 'apply-offer'" ref="applyOffer" v-bind:user-obj="userObj" v-bind:offer-obj="routing.offerObj" v-bind:reviews-arr="routing.reviewsArr" v-bind:crypto-fiat-rates-arr="cryptoFiatRatesArr"></apply-offer>
+
+    <deals v-if="whatPageToShow === 'deals'" ref="deals" v-bind:user-obj="userObj" v-bind:user-deals="routing.userDeals" v-bind:crypto-fiat-rates-arr="cryptoFiatRatesArr" v-bind:deal-notifications="dealNotifications"></deals>
+    <!--<deals v-if="whatPageToShow === 'deal'" ref="deal" v-bind:user-obj="userObj" v-bind:deal-obj="routing.dealObj"></deals>-->
+
+    <settings v-if="whatPageToShow === 'settings'" ref="settings" v-bind:user-obj="userObj"></settings>
+    <restore-password v-if="whatPageToShow === 'restore-password'" ref="restorePassword"></restore-password>
+
+    <comissions v-if="whatPageToShow === 'comissions'" ref="comissions" v-bind:user-obj="userObj"></comissions>
+    <user-offers v-if="whatPageToShow === 'offers'" ref="userOffers" v-bind:user-obj="userObj" v-bind:offers-arr="routing.offersArr"></user-offers>
+    <investors v-if="whatPageToShow === 'for-investors'" ref="forInvestors" v-bind:user-obj="userObj"></investors>
+
+    <contact-us v-if="whatPageToShow === 'contact-us'" ref="contactUs" v-bind:user-obj="userObj"></contact-us>
+    <terms-of-use v-if="whatPageToShow === 'terms-of-use'" ref="termsOfUse" v-bind:user-obj="userObj"></terms-of-use>
+    <privacy-policy v-if="whatPageToShow === 'privacy-policy'" ref="privacyPolicy" v-bind:user-obj="userObj"></privacy-policy>
+    <listing-companies v-show="whatPageToShow === 'listing-companies'" ref="listingCompanies" v-bind:user-obj="userObj"></listing-companies>
+    <manage-offers v-if="whatPageToShow === 'manage-offers'" ref="manage-offers" v-bind:user-obj="userObj" v-bind:offers="routing.offersArr" v-bind:crypto-fiat-rates-arr="cryptoFiatRatesArr"></manage-offers>
+    <!-- Footer
+    ================================================== -->
+    <div id="footer">
+        <!-- Footer Top Section -->
+        <div class="footer-top-section">
+            <div class="container">
+                <div class="row">
+                    <div class="col-xl-12">
+
+                        <!-- Footer Rows Container -->
+                        <div class="footer-rows-container">
+
+                            <!-- Left Side -->
+                            <div class="footer-rows-left">
+                                <div class="footer-row">
+                                    <div class="footer-row-inner footer-logo">
+                                        <img src="/images/favicon11z.png" alt="">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Right Side -->
+                            <div class="footer-rows-right">
+
+                                <!-- Social Icons -->
+                                <div class="footer-row">
+                                    <div class="footer-row-inner">
+                                        <ul class="footer-social-links">
+                                            <li>
+                                                <!-- Facebook -->
+                                                <a href="#"
+                                                   data-tippy-theme="light">
+                                                    <i class="icon-brand-facebook-f"></i>
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <!-- Twitter -->
+                                                <a href="#"
+                                                   data-tippy-theme="light">
+                                                    <i class="icon-brand-twitter"></i>
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <!-- Google Plus -->
+                                                <a href="#"
+                                                   data-tippy-theme="light">
+                                                    <i class="icon-brand-google-plus-g"></i>
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <!-- LinkedIn -->
+                                                <a href="#"
+                                                   data-tippy-theme="light">
+                                                    <i class="icon-brand-linkedin-in"></i>
+                                                </a>
+                                            </li>
+                                        </ul>
+                                        <div class="clearfix"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Language Switcher -->
+                                <div class="footer-row">
+                                    <div class="footer-row-inner">
+                                        <select id="language-select" class="selectpicker language-switcher selectLangPicker" data-selected-text-format="count"
+                                                data-size="12" v-on:change="setLanguage($event)">
+                                            <option value="en">English</option>
+                                            <option value="de">Deutsch</option>
+                                            <option value="fr">Français</option>
+                                            <option value="ru">Русский</option>
+                                            <option value="es">Español</option>
+                                            <option value="pt">Português</option>
+                                            <option value="ms">Melayu</option>
+                                            <option value="cn">中國人</option>
+                                            <option value="hi">हिन्दूस्तानी</option>
+                                            <option value="bn">বাঙালি</option>
+                                            <option value="ja">日本語</option>
+                                            <option value="ar">العربية</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                        <!-- Footer Rows Container / End -->
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Footer Top Section / End -->
+
+        <!-- Footer Middle Section -->
+        <div class="footer-middle-section">
+            <div class="container">
+                <div class="row">
+
+                    <!-- Links -->
+                    <div class="col-xl-2 col-lg-2 col-md-3">
+                        <div class="footer-links">
+                            <h3><%=_lt.get('Main Menu')%></h3>
+                            <ul>
+                                <li><a href="/"><span><%=_lt.get('Home')%></span></a></li>
+                                <li><a href="#deals"><span><%=_lt.get('Your deals')%></span></a></li>
+                                <li><a href="#comissions"><span><%=_lt.get('Commissions')%></span></a></li>
+                                <li><a href="#post-offer"><span><%=_lt.get('Create an offer')%></span></a></li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Links -->
+                    <div class="col-xl-2 col-lg-2 col-md-3">
+                        <div class="footer-links" >
+                            <h3><%=_lt.get('For Investors')%></h3>
+                            <ul>
+                                <li style="display: none"><a href="#for-investors"><span><%=_lt.get('Become an investor')%></span></a></li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Links -->
+                    <div class="col-xl-2 col-lg-2 col-md-3">
+                        <div class="footer-links">
+                            <h3><%=_lt.get('Account')%></h3>
+                            <ul>
+                                <li><a href="#sign-in-dialog" class="popup-with-zoom-anim"><span><%=_lt.get('Log in')%></span></a></li>
+                                <li><a href="/#settings"><span><%=_lt.get('My Account')%></span></a></li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Links -->
+                    <div class="col-xl-2 col-lg-2 col-md-3">
+                        <div class="footer-links" v-if='metrikaData'>
+                            <h3><%=_lt.get('Visitors')%></h3>
+                            <%=_lt.get('Total')%>: {{metrikaData.alltimeVisits}}  <br>
+                            <%=_lt.get('Today')%>: {{metrikaData.toodayVisits}} <br>
+                            <%=_lt.get('Today by Country')%>: <br>
+                            <div class="gridMetrika">
+                                <div v-for='country in metrikaData.toodayVisitsByCountry' style='display: inline-block'>
+                                    <img v-bind:title="country.countryName" v-bind:src="'/images/flags/' + country.countryIso.toLowerCase() + '.svg'" width="20px;" v-bind:alt="country.countryIso">
+                                    <span v-bind:title="country.visits"> {{ commarize(country.visits) }} </span>&nbsp;
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Newsletter -->
+                    <div class="col-xl-4 col-lg-4 col-md-12">
+                        <h3><i class="icon-feather-mail"></i><%=_lt.get('Sign up newsletters')%></h3>
+                        <p><%=_lt.get('Get breaking news')%></p>
+                        <form action="#" method="get" class="newsletter" v-on:submit="subscribeToNewsletter($event)">
+                            <input type="text"
+                                   name="fname"
+                                   placeholder='<%=_lt.get('Enter your email address')%>'
+                                   v-model="subscriptionEmail">
+                            <button type="submit"><i class="icon-feather-arrow-right"></i></button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Footer Middle Section / End -->
+
+        <!-- Footer Copyrights -->
+        <div class="footer-bottom-section">
+            <div class="container">
+                <div class="row">
+                    <div class="col-xl-12">
+                        © 2018-2019 <strong>LocalCrypto.cloud</strong>. <%=_lt.get('All Rights Reserved')%>
+                        <div class="footer-links">
+                            <a href="#terms-of-use" class="underlined-white-link"><span><%=_lt.get('Terms of Use')%></span></a><span> - </span>
+                            <a href="#contact-us" class="underlined-white-link"><span><%=_lt.get('Contact us')%></span></a><span> - </span>
+                            <a href="#privacy-policy" class="underlined-white-link"><span><%=_lt.get('Privacy Policy')%></span></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Footer Copyrights / End -->
+
+    </div>
+    <!-- Footer / End -->
+    <!-- Sign In Popup
+    ================================================== -->
+    <div id="sign-in-dialog" class="zoom-anim-dialog mfp-hide dialog-with-tabs">
+
+        <!--Tabs -->
+        <div class="sign-in-form">
+
+            <ul class="popup-tabs-nav">
+                <li><a href="#login"><%=_lt.get('Log in')%></a></li>
+                <li><a href="#register"><%=_lt.get('Register')%></a></li>
+            </ul>
+
+            <div class="popup-tabs-container">
+
+                <!-- Login -->
+                <div class="popup-tab-content" id="login">
+
+                    <!-- Welcome Text -->
+                    <div class="welcome-text">
+                        <h3><%=_lt.get('We glad to see you')%></h3>
+                        <span><%=_lt.get('Do not have an account')%> <a href="#" class="register-tab"><%=_lt.get('Sign Up')%></a></span>
+                    </div>
+
+                    <!-- Form -->
+                    <form method="post" id="login-form" onsubmit="loginUser(event)">
+                        <div id="error"></div>
+                        <div class="input-with-icon-left">
+                            <i class="icon-material-baseline-mail-outline"></i>
+                            <input type="text" autocomplete="off" class="input-text with-border" name="emailaddress" id="emailaddress" placeholder='<%=_lt.get('Email Address')%>' required/>
+                        </div>
+
+                        <div class="input-with-icon-left">
+                            <i class="icon-material-outline-lock"></i>
+                            <input type="password" autocomplete="off" class="input-text with-border" name="password" id="password" min="6" placeholder='<%=_lt.get('Password')%>' required/>
+                        </div>
+                        <a href="#restore-password-dialog" class="popup-with-zoom-anim forgot-password"><%=_lt.get('Forgot Password')%></a>
+                    </form>
+
+                    <!-- Button -->
+                    <button class="button full-width button-sliding-icon ripple-effect" type="submit" form="login-form"><%=_lt.get('Log in')%><i class="icon-material-outline-arrow-right-alt"></i></button>
+
+
+
+                </div>
+
+                <!-- Register -->
+                <div class="popup-tab-content" id="register">
+
+                    <!-- Welcome Text -->
+                    <div class="welcome-text">
+                        <h3><%=_lt.get('Let create your account')%></h3>
+                    </div>
+
+
+                    <form method="post" autocomplete="off" id="register-account-form" onsubmit="registerUser(event);">
+                        <div class="inputErrorMessage invisible" id="duplicate-email-alert">
+                            <h4><%=_lt.get('Email already registered')%></h4>
+                        </div>
+                        <div class="input-with-icon-left">
+                            <i class="icon-material-baseline-mail-outline"></i>
+                            <input type="email" autocomplete="email" class="input-text with-border" name="emailaddress-register" id="emailaddress-register" placeholder='<%=_lt.get('Email Address')%>' required />
+                        </div>
+
+                        <div class="inputErrorMessage invisible" id="password-not-match-alert">
+                            <h4><%=_lt.get('Passwords do not match')%></h4>
+                        </div>
+
+                        <div class="input-with-icon-left">
+                            <i class="icon-material-outline-lock"></i>
+                            <input autocomplete="new-password" type="password" class="input-text with-border" name="password-register" id="password-register" placeholder='<%=_lt.get('Password')%>' min="6" required/>
+                        </div>
+
+                        <div class="input-with-icon-left">
+                            <i class="icon-material-outline-lock"></i>
+                            <input type="password" class="input-text with-border" name="password-repeat-register" id="password-repeat-register" min="6" placeholder='<%=_lt.get('Repeat Password')%>' autocomplete="off" required/>
+                            <input type="hidden" id="clientIp" value="<%=locals.realIp%>">
+                        </div>
+
+                        <div class="checkbox">
+                            <input type="checkbox" id="exchangerRegitser" v-model="registerForm.exchanger">
+                            <label for="exchangerRegitser">
+                                <span class="checkbox-icon"></span><%=_lt.get('Register me as an exchanger')%>
+                            </label>
+                        </div>
+
+                        <!-- If exchanger -->
+                        <div v-show="registerForm.exchanger">
+                            <!-- Company name input -->
+                            <div class="input-with-icon-left margin-top-10">
+                                <i class="icon-material-outline-info"></i>
+                                <input type="text" class="input-text with-border" name="company-name" id="company-name" placeholder='<%=_lt.get('Company name')%>' autocomplete="off"/>
+                            </div>
+
+                            <!-- Location input -->
+                            <div class="inputErrorMessage invisible" id="enter-location-alert">
+                                <h4>{{registerForm.locationInputError}}</h4>
+                            </div>
+                            <div class="input-with-icon-left margin-top-10">
+                                <i class="icon-material-outline-location-on"></i>
+                                <div id="location-container">
+                                    <input
+                                            id="autocomplete-register"
+                                            class="googlemaps-autocomplete with-border"
+                                            type="text"
+                                            placeholder="<%=_lt.get('Country, city, street, house')%>"
+                                    >
+                                </div>
+                            </div>
+                            <div class="inputErrorMessage invisible" id="invalid-phone-alert">
+                                <h4><%=_lt.get('Invalid phone number')%></h4>
+                            </div>
+
+                            <!-- Phone number input -->
+                            <div class="inputmargin-top-10">
+                                <input
+                                        type="tel"
+                                        class="input-text with-border"
+                                        name="phone-number-register"
+                                        id="phone-number-register"
+                                        placeholder="<%=_lt.get('Phone number')%>"
+                                        autocomplete="phone"
+                                >
+                            </div>
+
+                            <!-- Responsible person input -->
+                            <div class="input-with-icon-left margin-top-20">
+                                <i class="icon-material-outline-account-circle"></i>
+                                <input type="text" class="input-text with-border" name="responsible-person-register" id="responsible-person-register" placeholder='<%=_lt.get('Responsible person')%>' autocomplete="off" />
+                            </div>
+
+                            <!-- Work time for weekdays -->
+                            <h4><%=_lt.get('Business Time')%></h4>
+                            <div class="row no-gutters">
+                                <div class="col">
+                                    <!-- Work time start input -->
+                                    <div class="margin-top-10 margin-bottom-10">
+                                        <select
+                                                id="weekdays-worktime-start"
+                                                class="selectpicker with-border selectTimePicker"
+                                                title="<%=_lt.get('From')%>"
+                                                v-model="registerForm.businessTimeStart"
+                                                data-size="4"
+                                        >
+                                            <option v-for="time in registerForm.times" v-bind:value="time.value">
+                                                {{time.time}}
+                                            </option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col padding-left-20">
+                                    <!-- Work time end input -->
+                                    <div class="margin-top-10">
+                                        <select
+                                                id="weekdays-worktime-end"
+                                                class="selectpicker with-border selectTimePicker"
+                                                title="<%=_lt.get('To')%>"
+                                                v-model="registerForm.businessTimeEnd"
+                                                data-size="4">
+                                            <option v-for="time in registerForm.times" v-bind:value="time.value">
+                                                {{time.time}}
+                                            </option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Work time for weekends -->
+                            <div class="checkbox margin-top-10">
+                                <input v-model="registerForm.workOnWeekend" type="checkbox" id="workOnWeekend">
+                                <label for="workOnWeekend">
+                                    <span class="checkbox-icon"></span><%=_lt.get('Work on weekends')%>
+                                </label>
+                            </div>
+                            <!-- Work time for saturday -->
+                            <h4 v-show="registerForm.workOnWeekend" class="margin-top-10"><%=_lt.get('Saturday')%></h4>
+                            <div v-show="registerForm.workOnWeekend" class="row no-gutters">
+                                <div class="col">
+                                    <!-- Work time start input -->
+                                    <div class="margin-top-10">
+                                        <select
+                                                id="saturday-worktime-start"
+                                                class="selectpicker with-border selectTimePicker"
+                                                title="<%=_lt.get('From')%>"
+                                                v-model="registerForm.saturdayBusinessTimeStart"
+                                                data-size="5"
+                                        >
+                                            <option v-for="time in registerForm.times" v-bind:value="time.value">
+                                                {{time.time}}
+                                            </option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col padding-left-20">
+                                    <!-- Work time end input -->
+                                    <div class="margin-top-10">
+                                        <select
+                                                id="saturday-worktime-end"
+                                                class="selectpicker with-border selectTimePicker"
+                                                title="<%=_lt.get('To')%>"
+                                                v-model="registerForm.saturdayBusinessTimeEnd"
+                                                data-size="5"
+                                        >
+                                            <option v-for="time in registerForm.times" v-bind:value="time.value">
+                                                {{time.time}}
+                                            </option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Work time for sunday -->
+                            <h4 v-show="registerForm.workOnWeekend" class="margin-top-10"><%=_lt.get('Sunday')%></h4>
+                            <div v-show="registerForm.workOnWeekend" class="row no-gutters margin-top-10">
+                                <div class="col">
+                                    <!-- Work time start input -->
+                                    <div>
+                                        <select
+                                                id="sunday-worktime-start"
+                                                class="selectpicker with-border selectTimePicker"
+                                                title="<%=_lt.get('From')%>"
+                                                v-model="registerForm.sundayBusinessTimeStart"
+                                                data-size="3"
+                                        >
+                                            <option v-for="time in registerForm.times" v-bind:value="time.value">
+                                                {{time.time}}
+                                            </option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col padding-left-20">
+                                    <!-- Work time end input -->
+                                    <div>
+                                        <select
+                                                id="sunday-worktime-end"
+                                                class="selectpicker with-border selectTimePicker"
+                                                title="<%=_lt.get('To')%>"
+                                                v-model="registerForm.sundayBusinessTimeEnd"
+                                                data-size="3"
+                                        >
+                                            <option v-for="time in registerForm.times" v-bind:value="time.value">
+                                                {{time.time}}
+                                            </option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- If exchanger End -->
+
+                        <div class="alert alert-danger invisible" id="validation-error-alert">
+                            <h4 class="alert-heading"><%= _lt.get('Validation Error')%></h4>
+                            <p><%= _lt.get('Recheck your input')%></p>
+                        </div>
+
+                        <div class="alert alert-danger invisible" id="error-alert">
+                            <p id="message-error">
+                                {{errorInRegistr}}
+                            </p>
+                        </div>
+                        <!-- Button -->
+                        <button class="margin-top-20 button full-width button-sliding-icon ripple-effect" type="submit" form="register-account-form"><%=_lt.get('Register')%><i class="icon-material-outline-arrow-right-alt"></i></button>
+                    </form>
+                    <!--&lt;!&ndash; Social Login &ndash;&gt;-->
+                    <!--<div class="social-login-separator"><span>or</span></div>-->
+                    <!--<div class="social-login-buttons">-->
+                    <!--<button class="facebook-login ripple-effect"><i class="icon-brand-facebook-f"></i> Register via Facebook</button>-->
+                    <!--<button class="google-login ripple-effect"><i class="icon-brand-google-plus-g"></i> Register via Google+</button>-->
+                    <!--</div>-->
+                </div>
+
+            </div>
+        </div>
+    </div>
+    <!-- Sign In Popup / End -->
+
+    <!-- Restore password -->
+    <div id="restore-password-dialog" name="restore-password-dialog" class="zoom-anim-dialog mfp-hide dialog-with-tabs">
+        <div>
+            <h3><%=_lt.get('Restore Password')%></h3>
+            <p><%=_lt.get('Enter the email address')%></p>
+            <form id="restore-password-form" v-on:submit="restorePassword">
+                <div class="inputErrorMessage invisible" id="bad-email-restore">
+                    <h4><%=_lt.get('Email address not registered')%></h4>
+                </div>
+                <input
+                        v-model="restorePasswordForm.email"
+                        id="email-input-restore"
+                        type="email"
+                        name="email"
+                        class="with-border"
+                        placeholder='<%=_lt.get('Type your email')%>'
+                        required
+                >
+                <button
+                        class="margin-top-20 button full-width button-sliding-icon ripple-effect"
+                        type="submit"
+                        form="restore-password-form"
+                ><%=_lt.get('Send')%><i class="icon-material-outline-arrow-right-alt"></i>
+                </button>
+            </form>
+        </div>
+
+    </div>
+    <!-- Restore Password End -->
+</div>
+<!-- Wrapper / End -->
+
+
+<!-- Snackbar // documentation: https://www.polonel.com/snackbar/ -->
+<script>
+    // Snackbar for user status switcher
+    $('#snackbar-user-status label').click(function () {
+        Snackbar.show({
+            text: "<%=_lt.get('Your status changed')%>",
+            pos: 'bottom-center',
+            showAction: false,
+            actionText: "Dismiss",
+            duration: 3000,
+            textColor: '#fff',
+            backgroundColor: '#383838'
+        });
+    });
+
+    $(document).ready(function() {
+        var my_param = getUrlParameter('run');
+        if (my_param === "sign-in") {
+            $.magnificPopup.open({
+                items: {
+                    src: '#sign-in-dialog'
+                },
+                type: 'inline'
+            });
+        }
+    });
+
+    var getUrlParameter = function getUrlParameter(sParam) {
+        var sPageURL = decodeURIComponent(window.location.search.substring(1)),
+            sURLVariables = sPageURL.split('&'),
+            sParameterName,
+            i;
+
+        for (i = 0; i < sURLVariables.length; i++) {
+            sParameterName = sURLVariables[i].split('=');
+
+            if (sParameterName[0] === sParam) {
+                return sParameterName[1] === undefined ? true : sParameterName[1];
+            }
+        }
+    };
+
+    $(document).on('change', '#exchangerRegitser', function () {
+        if (this.checked) {
+            $("#company-name").attr("required", "true");
+            $("#autocomplete-register").attr("required", "true");
+            $("#phone-number-register").attr("required", "true");
+            $("#responsible-person-register").attr("required", "true");
+            $("#weekdays-worktime-start").attr("required", "true");
+            $("#weekdays-worktime-end").attr("required", "true");
+
+        } else {
+            $("#company-name").removeAttr("required");
+            $("#autocomplete-register").removeAttr("required");
+            $("#phone-number-register").removeAttr("required");
+            $("#responsible-person-register").removeAttr("required");
+            $("#weekdays-worktime-start").removeAttr("required");
+            $("#weekdays-worktime-end").removeAttr("required");
+        }
+    });
+</script>
+
+<%include components/listingOffers.ejs%>
+<%include components/postingOffer.ejs%>
+<%include components/approvePage.ejs%>
+<%include components/applyOffer.ejs%>
+<%include components/deals.ejs%>
+<%include components/settings.ejs%>
+<%include components/comissions.ejs%>
+<%include components/userOffers.ejs%>
+<%include components/restorePassword.ejs%>
+<%include components/forInvestors.ejs%>
+<%include components/contactUs.ejs%>
+<%include components/termsOfUse.ejs%>
+<%include components/privacyPolicy.ejs%>
+<%include components/listingCompanies.ejs%>
+<%include components/manageOffers.ejs%>
+
+<script>
+    Vue.use(SocialSharing)
+    var app = new Vue({
+        el: '#wrapper',
+        data: {
+            moment: moment,
+            pages: ['main'], // initial
+            clientIp: '<%=locals.realIp%>',
+            geoObj: <%-JSON.stringify(locals.geoObj)%>,
+            subscriptionEmail: '',
+            userObj:  '',
+            googleAutocomplete: '',
+            isNotificationsActive: false,
+            newMessages: [],
+            messages: [],
+            newNotifications: [],
+            dealNotifications: [],
+            registerForm: {
+                times: businessTimeList,
+                exchanger: false,
+                workOnWeekend: false,
+                businessTimeStart: '',
+                businessTimeEnd: '',
+                saturdayBusinessTimeStart: '',
+                saturdayBusinessTimeEnd: '',
+                sundayBusinessTimeStart: '',
+                sundayBusinessTimeEnd: '',
+                locationInputError: '',
+            },
+            restorePasswordForm: {
+                email: ''
+            },
+            routing: {
+                offerObj: {},
+                sellerObj: {},
+                dealObj: {},
+                userDeals: {},
+                reviewsArr: [],
+                offersArr: []
+            },
+            iti: {},
+            metrikaData: undefined,
+            cryptoFiatRatesArr: <%-JSON.stringify(locals.cryptoFiatRatesArr)%>,
+            errorInRegistr:'',
+            articles: [
+                {
+                    href: <%- JSON.stringify(_lt.get('href_of_article_1')) %>,
+                    headertext: <%- JSON.stringify(_lt.get('head_text_1')) %>
+                },
+                {
+                    href: <%- JSON.stringify(_lt.get('href_of_article_2')) %>,
+                    headertext: <%- JSON.stringify(_lt.get('head_text_2')) %>
+                },
+                {
+                    href: <%- JSON.stringify(_lt.get('href_of_article_3')) %>,
+                    headertext: <%- JSON.stringify(_lt.get('head_text_3')) %>
+                },
+                {
+                    href: <%- JSON.stringify(_lt.get('href_of_article_4')) %>,
+                    headertext: <%- JSON.stringify(_lt.get('head_text_4')) %>
+                },
+                {
+                    href: <%- JSON.stringify(_lt.get('href_of_article_5')) %>,
+                    headertext: <%- JSON.stringify(_lt.get('head_text_5')) %>
+                },
+                {
+                    href: <%- JSON.stringify(_lt.get('href_of_article_6')) %>,
+                    headertext: <%- JSON.stringify(_lt.get('head_text_6')) %>
+                },
+                {
+                    href: <%- JSON.stringify(_lt.get('href_of_article_7')) %>,
+                    headertext: <%- JSON.stringify(_lt.get('head_text_7')) %>
+                },
+            ]
+        },
+        computed: {
+            profileObj: function () {
+                if (this.userObj.uHash) {
+                    return {
+                        uHash : this.userObj.uHash,
+                        name : this.userObj.name,
+                        surname : this.userObj.surname,
+                        avatarPath : this.userObj.avatarPath,
+                        socketRef: this.userObj.socketRef,
+                        email: this.userObj.email,
+                        role: 'User'
+                    }
+                } else {
+                    return {name : 'Anonym', surname: 'Anonym', role: 'User' };
+                }
+            },
+            whatPageToShow: function () {
+                // get last page from "history"
+                let howMuch = this.pages.length;
+                howMuch = howMuch - 1;
+                if (howMuch < 0) {
+                    console.log('Error in whatPageToShow');
+                    return 'main';
+                }
+                // return last page name
+                return this.pages[howMuch];
+            }
+        },
+        created: function () {
+
+
+            let firstHash = window.location.hash;
+            if (firstHash && typeof firstHash === 'string' && firstHash.includes('#') && firstHash.length > 1) {
+                firstHash = firstHash.replace('#', '');
+                this.goToPage(firstHash);
+            }
+
+            this.$root.$on('updateUserObj', function (newObj) {
+                this.userObj = newObj;
+            })
+
+            this.$root.$on('goToPageEmit', function (pageName) {
+                this.goToPage(pageName)   // why callback keep real this. i don't understand )
+            })
+
+            this.$root.$on('logoutUser', function (boolValue) {
+                if (boolValue) {
+                    this.userObj = {};
+                    console.log('user reseted')
+                } else {
+                    console.log('user not reseted')
+                }
+            })
+
+            // ** ROUTER INDEX EJS *//
+            window.onhashchange = () => { // super small router :)
+                if (window.innerDocClick) {
+                    // Your own in-page mechanism triggered the hash change
+                    console.log('Your own in-page mechanism triggered the hash change')
+                } else {
+                    // Browser back or forward button was pressed
+                    let firstHash = window.location.hash;
+                    let tempUrl = `${window.location}`
+
+                    if (firstHash && typeof firstHash === 'string' && firstHash.includes('#') && firstHash.length > 1) {
+                        firstHash = firstHash.replace('#', '');
+                        this.goToPage(firstHash);
+                    } else if (tempUrl.includes('#') === false) {
+                        this.goToPage('main')
+                    }
+                }
+            };
+
+
+        },
+        mounted() {
+            var lang = this.getCookie('lang');
+            if(lang === undefined) lang = "en";
+            var url = 'https://' + (lang === "en" ? '' : lang + '.') + 'localcrypto.cloud' + window.location.hash;
+            $('#language-select').val(lang)
+
+            if (lang !== '' && url !== window.location) {
+                console.log(url + ' != ' + location);
+                //window.location.assign(url);
+            }
+            else {
+                console.log('where you are!')
+            }
+
+            if (this.geoObj) {
+                console.log(this.geoObj)
+                socket.emit('getCountryByCode', {code: this.geoObj.country}, function (error, answer) {
+                    if (error){
+                        console.log('Error in get country', error);
+                    } else {
+                        if (answer){
+                            app.registerForm.countryName = answer;
+                            app.registerForm.countryCode = app.geoObj.country;
+                            console.log('Your country is ', app.registerForm.countryName);
+                        } else {
+                            geoModel.decodeLatLong(app.geoObj.ll[0], app.geoObj.ll[1])
+                                .then(geoObj => {
+                                    app.registerForm.countryName = geoObj.country;
+                                    app.registerForm.countryCode = geoObj.countryCode;
+                                    console.log('Your country is ', geoObj.country);
+                                })
+                                .catch(error => {
+                                    console.log('error parse location:', error)
+                                });
+                        }
+                    }
+                });
+
+            } else {
+                console.log('geoObj is undefined');
+            }
+
+            socket.on('message', (mes) => {
+                this.messages.push(mes)
+            });
+
+            socket.on('updateCryptoData', (obj) => {
+                this.saveCryptoCurrencies(obj);
+            })
+
+            this.getUserObj();
+            this.readUserDeals();
+            this.readUserOffers();
+            this.getUserMessages();
+            this.getMetrikaData();
+
+            this.getUserOpenOffersArr();
+
+            this.initGoogleAutocomplete();
+
+            $('.selectTimePicker').selectpicker();
+            $('.selectLangPicker').selectpicker();
+
+            var phoneInput = document.querySelector("#phone-number-register");
+            let iti = intlTelInput(phoneInput, {
+                utilsScript: "/js/utils.js",
+                separateDialCode: true,
+                formatOnDisplay: false
+            });
+            this.iti = iti;
+
+            $("#autocomplete-register").on('blur', () => {
+                if (!this.registerForm.countryName && this.registerForm.locationInputError.length === 0) {
+                    this.registerForm.locationInputError = '<%=_lt.get('You forgot country')%>';
+                    $("#enter-location-alert").css("display", "block");
+                    $("#autocomplete-register").addClass("invalidInput");
+                }
+            });
+
+            $("#emailaddress-register").on('blur', function () {
+                $("#duplicate-email-alert").css("display", "");
+                $("#emailaddress-register").removeClass("invalidInput");
+            });
+
+            $("#phone-number-register").on('blur', () => {
+                if ($("#phone-number-register").val().trim()) {
+                    if (!iti.isValidNumber()) {
+                        $("#invalid-phone-alert").css("display", "block");
+                        $("#phone-number-register").addClass("invalidInput");
+                    } else {
+                        $("#invalid-phone-alert").css("display", "");
+                        $("#phone-number-register").removeClass("invalidInput");
+                        this.registerForm.telCountryCode = iti.getSelectedCountryData().dialCode;
+                        this.registerForm.telNumber = iti.getNumber().substring(this.registerForm.telCountryCode.length + 1);
+                    }
+                }
+            });
+
+            $("#password-register").on('blur', function () {
+                if ($("#password-repeat-register").val().trim()) {
+                    if ($("#password-register").val() !== $("#password-repeat-register").val()) {
+                        $("#password-not-match-alert").css("display", "block");
+                        $("#password-register").addClass("invalidInput");
+                        $("#password-repeat-register").addClass("invalidInput");
+                    } else {
+                        $("#password-not-match-alert").css("display", "");
+                        $("#password-register").removeClass("invalidInput");
+                        $("#password-repeat-register").removeClass("invalidInput");
+                    }
+                }
+
+            });
+
+            $("#password-repeat-register").on('blur', function () {
+                if ($("#password-register").val() !== $("#password-repeat-register").val()) {
+                    $("#password-not-match-alert").css("display", "block");
+                    $("#password-register").addClass("invalidInput");
+                    $("#password-repeat-register").addClass("invalidInput");
+                } else {
+                    $("#password-not-match-alert").css("display", "");
+                    $("#password-register").removeClass("invalidInput");
+                    $("#password-repeat-register").removeClass("invalidInput");
+                }
+            });
+        },
+
+        methods: {
+            setLanguage: function (event) {
+                document.cookie = "lang = " + event.target.value;
+                let path = window.location.hash;
+                if(event.target.value !== 'en') {
+                    window.location.assign('https://' + event.target.value + '.localcrypto.cloud' + path);
+                } else {
+                    window.location.assign('https://localcrypto.cloud' + path);
+                }
+            },
+            getCookie: function (name) {
+                let matches = document.cookie.match(new RegExp(
+                    "(?:^|; )" + name.replace(/([\.$?*|{}\(\)\[\]\\\/\+^])/g, '\\$1') + "=([^;]*)"
+                ));
+                return matches ? decodeURIComponent(matches[1]) : undefined;
+            },
+            getMetrikaData: function() {
+                socket.emit('getMetrikaData', {}, (error, yaMetrikaData) => {
+                    if (!yaMetrikaData)  {
+                        return console.log('[Error] Metrika is empty');
+                    }
+                    try {
+                        let md = {
+                            alltimeVisits: yaMetrikaData.alldayMetrika.data[0].metrics[0],
+                            toodayVisits: 0,
+                            toodayVisitsByCountry: []
+                        };
+
+                        yaMetrikaData.toodayMetrika.data.forEach((cm) => {
+
+                            if (md.toodayVisitsByCountry.length < 15) {
+                                md.toodayVisitsByCountry.push({
+                                    countryIso:  cm.dimensions["0"].iso_name,
+                                    visits:  cm.metrics["0"]["0"],
+                                    countryName: cm.dimensions["0"].name,
+                                });
+                            }
+                        });
+
+                        md.toodayVisits = yaMetrikaData.toodayTotalMetrika.data[0].metrics[0][0];
+
+                        this.metrikaData = md;
+                    } catch (e) {
+                        console.log('[Error] In Metrika: ',e);
+                    }
+                });
+            },
+
+            commarize: function(val, min) {
+                min = min || 1e3;
+                if (val >= min) {
+                    let units = ["k", "M", "B", "T"];
+                    let order = Math.floor(Math.log(val) / Math.log(1000));
+                    let num = parseFloat((val / 1000 ** order).toFixed(1));
+                    return num + units[(order - 1)];
+                }
+                return val + ''
+            },
+
+            restorePassword: function (event) {
+                event.preventDefault();
+                sendResetLink(this.restorePasswordForm);
+            },
+
+            saveCryptoCurrencies(cryptoFiatRatesArr){
+                if (cryptoFiatRatesArr) {
+                    this.cryptoFiatRatesArr = cryptoFiatRatesArr;
+                }
+                else {
+                    console.log('Error in update crypto rates');
+                }
+            },
+
+            initGoogleAutocomplete() {
+                let addr = 'https://maps.googleapis.com/maps/api/js?key='+ '<%=locals.mapsGoogleApiKey%>' + '&libraries=places&callback=initAutocomplete';
+                this.googleAutocomplete = document.createElement('script')
+                this.googleAutocomplete.setAttribute('src', addr)
+                this.googleAutocomplete.async = true
+                this.googleAutocomplete.defer = true
+                document.head.appendChild(this.googleAutocomplete)
+            },
+            updatePhoneByCountry() {
+                this.iti.setCountry(app.registerForm.countryCode);
+            },
+
+            loadReviews(offerId) {
+                socket.emit('loadReviews', offerId, (error, reviewsArray) => {
+                    if (error) {
+                        console.log('Error reviews', error)
+                    } else {
+                        this.routing.reviewsArr = []
+                        this.routing.reviewsArr = reviewsArray;
+
+                        Vue.nextTick(function () {
+                            starRating('.star-rating');
+                        })
+
+
+                    }
+                })
+            },
+            goToPage: function (value) {
+                /** PARAMETERS ROUTER */
+                // may be some parameters?
+                if (value.includes("/")) {
+
+                    // get first parameter after /
+                    var parameterArr = value.split('/')
+
+                    if (parameterArr[0] === 'apply-offer') {     // apply offer page
+                        // load offer detail
+                        socket.emit('loadOfferDetail', parameterArr[1], (error, offerDetailObj) => {
+                            if (error) {
+                                console.log('Error in loadOfferDetail ', error)
+                            } else {
+                                this.routing.offerObj = offerDetailObj;
+                                this.loadReviews(offerDetailObj.offerId);
+                            }
+                        });
+                    } else if (parameterArr[0] === 'deal') {   // specific deal page
+                        socket.emit('loadDealAndMessages', {dealId: parameterArr[1], uHash: Cookies.get('uHashL')}, (error, dealObj) => {
+                            if (error) {
+                                console.log('Error in loadOfferDetail ', error)
+                            } else {
+                                this.routing.dealObj = dealObj;
+                            }
+                        })
+                    }
+
+                    this.pages.push(parameterArr[0]);
+                } else {
+                    this.pages.push(value);
+                }
+                window.scrollTo(0, 0);
+            },
+            getUserObj: function () {
+                if (Cookies.get('uHashL') && typeof Cookies.get('uHashL') !== 'undefined') {
+                    socket.emit('getUserObjByHash', Cookies.get('uHashL'), (error, responseObj) => {
+                        if (responseObj) {
+                            this.userObj = responseObj;
+                            socket.emit('readUserDeals', {uHash: Cookies.get('uHashL')}, (error, dealObj) => {
+                                if (error) {
+                                    console.log('Error in readUserDeals ', error)
+                                } else {
+                                    dealObj.forEach(oneDeal => {
+                                        if (oneDeal.wasDealViewedByOwner === 0) {
+                                            this.dealNotifications.push(oneDeal.id);
+                                        }
+                                        else {
+                                            console.log('deal id: ' + oneDeal.id + ', wasViewed: ' + oneDeal.wasDealViewedByOwner);
+                                        }
+                                    })
+                                }
+                            })
+                        } else {
+                            console.log('user is not auth.', error)
+                        }
+                    })
+                }
+            },
+            readUserDeals: function () {
+                if (Cookies.get('uHashL') && typeof Cookies.get('uHashL') !== 'undefined') {
+                    socket.emit('readUserDeals', {uHash :Cookies.get('uHashL')}, (error, deals) => {
+                        if (deals) {
+                            this.routing.userDeals = deals;
+                        } else {
+                            console.log('Error in readUserDeals', error)
+                        }
+                    })
+                }
+            },
+            readUserOffers: function () {
+                if (Cookies.get('uHashL') && typeof Cookies.get('uHashL') !== 'undefined') {
+                    socket.emit('readUserOffers', {uHash : Cookies.get('uHashL')}, (error, response) => {
+                        if (response) {
+                            console.log('success offer rooms joined', response)
+                        } else {
+                            console.log('Error with offer room joining', error)
+                        }
+                    })
+                }
+            },
+            parseLocations: function (lat, long) {
+                geoModel.decodeLatLong(lat, long)
+                    .then(geoObj => {
+                        this.city = geoObj.city;
+                        this.countryName = geoObj.country;
+                        this.countryCode = geoObj.countryCode;
+                        this.lat = lat;   // avoid 3rd. party side error (they can retrieve another lat)
+                        this.long = long;
+                        this.zipCode = geoObj.zipcode;
+                        callback(null, 'success');
+                    })
+                    .catch(e => {
+                        console.log('Error parse lat:', e)
+                        callback(e, null);
+                    })
+            },
+
+            getUserOpenOffersArr: function () {
+                if (Cookies.get('uHashL') && typeof Cookies.get('uHashL') !== 'undefined') {
+                    socket.emit('getUserOpenOffers', {uHash : Cookies.get('uHashL')}, (error, offersArr) => {
+                        if (offersArr) {
+                            offersArr.forEach(function(item, i, arr) {
+                                item.sharing = false;
+                            });
+                            this.routing.offersArr = offersArr;
+                        } else {
+                            console.log('Error in getUserOffers', error)
+                        }
+                    })
+                }
+            },
+
+            getUserMessages() {
+                if (Cookies.get('uHashL') && typeof Cookies.get('uHashL') !== 'undefined') {
+                    socket.emit('getUserMessages', {uHash : Cookies.get('uHashL')}, (error, messageArr) => {
+                        if (messageArr) {
+                            this.messages = messageArr.sort((prevItem, nextItem) => {
+                                if (prevItem.time < nextItem.time) {
+                                    return -1;
+                                }
+                                if (prevItem.time > nextItem.time) {
+                                    return 1;
+                                }
+                                return 0;
+                            })
+                        } else {
+                            console.log('Error in getUserMessages', messageArr)
+                        }
+                    })
+                }
+            },
+
+            clickOnUserMenu: function() {
+                $('.header-notifications').removeClass("active");
+            },
+
+            isEmailValid: function() {
+                var regEmail = /\S+@\S+\.\S+/;
+                return regEmail.test(this.subscriptionEmail)
+            },
+
+            subscribeToNewsletter: function (event) {
+                event.preventDefault();
+
+                if(this.isEmailValid()) {
+                    var subscribeObj = {
+                        ip: this.clientIp,
+                        email: this.subscriptionEmail
+                    }
+
+                    socket.emit('subscribeToNewsletter', subscribeObj, (error, success) => {
+                        if (success) {
+                            swal("<%=_lt.get('Success')%>", "<%=_lt.get('Thank you for joining')%>", 'success')
+                        } else {
+                            if(error === 'ER_DUP_ENTRY') {
+                                Swal.fire({
+                                    title: "<%=_lt.get('What a good piece of news')%>",
+                                    text: "<%=_lt.get('Email is already subscribed')%>",
+                                    imageUrl: './images/alerts/envelope.png',
+                                    imageWidth: 560,
+                                    imageHeight: 200,
+                                    imageAlt: "<%=_lt.get('Good piece of news')%>",
+                                    animation: false
+                                })
+                            } else {
+                                swal("<%=_lt.get('Error')%>", error, 'error')
+                            }
+                        }
+                    })
+
+                } else {
+                    swal("<%=_lt.get('Error')%>", "<%=_lt.get('Estimated price one coin')%>", 'error')
+                }
+            }
+        }
+
+    })
+</script>
+
+<script>
+
+    socket.on('newDeal', function (obj, callback) {
+        app.newNotifications.push(obj);
+        app.dealNotifications.push(obj.dealId);
+        $("#newNotifs").addClass('active');
+    })
+
+
+</script>
+<!-- Yandex.Metrika counter -->
+<script type="text/javascript" > (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)}; m[i].l=1*new Date();k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)}) (window, document, "script", "https://mc.yandex.ru/metrika/tag.js", "ym"); ym(54222805, "init", { clickmap:false, trackLinks:true, accurateTrackBounce:true, webvisor:false, trackHash:true }); </script>
+
+<noscript><div><img src="https://mc.yandex.ru/watch/54222805" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
+
+<!-- /Yandex.Metrika counter -->
+
+<script id="dsq-count-scr" src="//localcryptocloud.disqus.com/count.js" async></script>
+
+</body>
+</html>

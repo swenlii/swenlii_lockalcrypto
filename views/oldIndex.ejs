@@ -1,0 +1,30 @@
+<% include headers/baseHeader.ejs %>
+<script src="/js/FrontIndexController.js"></script>
+
+<div id='topMenu'></div>
+
+  <div id='offerGeoList'><%= message %></div>
+
+
+
+  <% if (locals.createNewOffer) { %>
+    <div id='createNewOffer'>Try to create new offer!
+    <div id="actionsRow">
+
+      <div onclick="createSellOffer();" class="actionButton">Create Sell Offer</div>
+      <div onclick="createBuyOffer();" class="actionButton">Create Buy Offer</div>
+    </div>
+
+        <div id="sellOfferCreation"></div>
+  </div>
+   <% } %>
+
+
+
+
+<% include footers/baseFooter.ejs %>
+
+
+
+
+

@@ -1,0 +1,224 @@
+<script>
+
+    var settings = Vue.component('settings', ({
+        name: 'settings',
+        props: ['userObj', 'userDeals'],
+        template: `<% include settings.vue %>`,
+        data: function () {
+            return {
+                clientIp: '<%=locals.realIp%>',
+                isValidPhone: true,
+                isSettingsChanging: false,
+                firstName: this.userObj.name,
+                avatarPath: this.userObj.avatarPath,
+                lastName: this.userObj.surname,
+                email: this.userObj.email,
+                phone: this.userObj.phone,
+                translate: {
+                    estimatePrice: "<%=_lt.get('Estimated price one coin')%>",
+                    marketPriceDescr: "<%=_lt.get('Price. Choose e.g.')%>"
+                },
+                newPassword: '',
+                repeatNewPassword: '',
+                currentPassword: '',
+                ini: '',
+                input: ''
+            }
+        },
+        methods: {
+            uploadAvatar() {
+                var avatar = this.$refs.avatarFile.files[0];
+                if (avatar !== undefined) {
+                    const allowTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+                    if (!(allowTypes).includes(avatar.type)) {
+                        swal("<%=_lt.get('Error')%>", "<%=_lt.get('Incorrect filetype')%>", 'error')
+                    } else {
+                        var uHash = Cookies.get('uHashL');
+                        const userFileObj = {
+                            uHash,
+                        }
+                        userFileObj.type = avatar.type;
+                        userFileObj.FILE = avatar;
+                        socket.emit('uploadAvatar', userFileObj, (error, success) => {
+                            if (error) {
+                                swal("<%=_lt.get('Error')%>", error, 'error')
+                            } else {
+                                this.userObj.avatarPath = success;
+                            }
+                        })
+                    }
+                }
+            },
+
+            deleteUserAccount() {
+                Swal.fire({
+                    title: "<%=_lt.get('Are you sure delete account')%>",
+                    text: "",
+                    type: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#2b44e9',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: "<%=_lt.get('Yes, delete it!')%>"
+                }).then((result) => {
+                    if (result.value) {
+                        let obj = {
+                            uHash : Cookies.get('uHashL'),
+                        }
+                        socket.emit('deleteUserAccount', obj, (error, success) => {
+                            if (error) {
+                                swal("<%=_lt.get('Error')%>", error, 'error')
+                            } else {
+                                swal("<%=_lt.get('Success')%>", "<%=_lt.get('Thank you account deleted!')%>", 'success')
+                                    .then(hm => {
+                                        Cookies.remove('uHashL')
+                                        location.hash = ''
+                                    })
+                                    .then(hm => {
+                                        location.reload()
+                                    })
+                            }
+                        })
+                    }
+                })
+            },
+
+            updateUserInfo() {
+                if(!this.isSettingsChanging) {
+                    if(!this.ini.isValidNumber()) {
+                        this.isValidPhone = false
+                    } else {
+                        this.isValidPhone = true;
+                        this.isSettingsChanging = true;
+
+                        const countryCode = this.ini.getSelectedCountryData().dialCode;
+                        const newPhone = this.ini.getNumber().slice(countryCode.length+1)
+                        let obj = {
+                            uHash : Cookies.get('uHashL'),
+                            firstName: this.firstName,
+                            lastName: this.lastName,
+                            email: this.email,
+                            countryCode,
+                            newPhone
+                        }
+                        socket.emit('updateUserInfo', obj, (error, success) => {
+                            if (error) {
+                                swal("<%=_lt.get('Error')%>", error, 'error')
+                                    .then(after => {
+                                        this.isSettingsChanging = false;
+                                    })
+                            } else {
+
+                                swal("<%=_lt.get('Success')%>", "<%=_lt.get('Thank you account updated!')%>", 'success')
+                                    .then(after => {
+                                        this.isSettingsChanging = false;
+                                    })
+                            }
+                        })
+                    }
+                }
+
+            },
+
+            changeUserPassword() {
+                if ( this.newPassword === this.repeatNewPassword ) {
+
+                    let obj = {
+                        uHash : Cookies.get('uHashL'),
+                        newPassword: this.newPassword,
+                        currentPassword: this.currentPassword
+                    }
+
+                    socket.emit('changeUserPassword', obj, (error, success) => {
+                        if (error) {
+
+                            swal("<%=_lt.get('Error')%>", error, 'error')
+                        } else {
+
+                            swal("<%=_lt.get('Success')%>", "<%=_lt.get('Thank you password changed!')%>", 'success')
+                        }
+                    })
+
+                } else {
+
+                    swal("<%=_lt.get('Error')%>", "<%=_lt.get('The new passwords did not')%>", 'error')
+                }
+
+                this.newPassword = '';
+                this.repeatNewPassword = '';
+                this.currentPassword = '';
+
+            },
+
+            changeUserPhone() {
+                if( !this.ini.isValidNumber() ) {
+
+                    swal("<%=_lt.get('Error')%>", "<%=_lt.get('Invalid phone number')%>", 'error')
+                } else {
+
+                    const countryCode = this.ini.getSelectedCountryData().dialCode
+                    const phone = this.ini.getNumber().slice(countryCode.length+1)
+
+                    let obj = {
+                        uHash : Cookies.get('uHashL'),
+                        newPhone: phone,
+                        countryCode: countryCode
+                    }
+
+                    socket.emit('changeUserPhone', obj, (error, success) => {
+                        if (error) {
+
+                            swal("<%=_lt.get('Error')%>", error, 'error')
+                        } else {
+
+                            swal("<%=_lt.get('Success')%>", "<%=_lt.get('Thank you phone changed!')%>", 'success')
+                        }
+                    })
+                }
+            },
+
+        },
+
+        watch: {
+            userObj(value) {
+                this.phone = value.phone;
+                this.firstName = value.name;
+                this.lastName = value.surname;
+                this.email = value.email;
+                this.avatarPath = value.avatarPath;
+            }
+        },
+
+        computed: {
+
+        },
+
+        mounted() {
+            $("#upload-button-settings").on('click', function () {
+                console.log('change file');
+                $("#file-upload-settings").click();
+            });
+
+            this.input = document.querySelector('#phone');
+
+            this.ini = intlTelInput(this.input, {
+                utilsScript :'/js/utils.js',
+                separateDialCode: true,
+                initialCountry: 'auto',
+                geoIpLookup: function(callback) {
+                    fetch('https://extreme-ip-lookup.com/json', {
+                        cache: 'reload'
+                    }).then(response => {
+                        if ( response.ok ) {
+                            return response.json()
+                        }
+                        throw new Error("<%=_lt.get('Failed: ')%>" + response.status)
+                    }).then(ipjson => {
+                        callback(ipjson.countryCode)
+                    }).catch(e => {
+                        callback('cz')
+                    })
+                }
+            })
+        },
+    }));
+</script>

@@ -1,0 +1,192 @@
+<script>
+    var investors = Vue.component('investors', ({
+        name: 'investors',
+        props: ['userObj'],
+        template: `<% include forInvestors.vue %>`,
+        data: function () {
+            return {
+                tippy: tippy,
+                coinsArr: [1,2,3,4,5,6,7,8,9,10,11,12,14,14,15,16],
+                sortingBy: 'none',
+                indexActivity: -1,
+                yourchosenactive:'',
+                coinsToSell: [{name:'Moscow Coin', price: 299, country_code: 'ru', currency: '$', region: 'Moscow', population:'11 000 000', agglomeration:'124 567 890', basic_income:'30 000$'}],
+
+            }
+        },
+        computed:{
+            yourchosen: function () {
+                let result = '';
+                this.yourchosenactive = '';
+                for (let i = 0; i < this.coinsToSell.length; i++) {
+                    if (this.coinsToSell[i].isChoosen) {
+                        result += this.coinsToSell[i].name + ', ';
+                        this.yourchosenactive = "<%=_lt.get('You have chosen:')%>";
+                    }
+                }
+                return result;
+            },
+
+            totalPrice: function () {
+                let usd = 0;
+                let eur = 0;
+                for (let i = 0; i < this.coinsToSell.length; i++) {
+                    if (this.coinsToSell[i].isChoosen) {
+                        if (this.coinsToSell[i].currency === 'usd') {
+                            usd += this.coinsToSell[i].price;
+                        }
+                        else {
+                            eur += this.coinsToSell[i].price;
+                        }
+                    }
+                }
+
+                let result = '';
+                if (usd > 0) {
+                    result += usd + '$';
+                }
+                if (eur > 0) {
+                    if (result.length > 0) {
+                        result += " <%= _lt.get('and') %> ";
+                    }
+                    result += eur + '€';
+                }
+                if (result.length === 0) result = '0';
+                return result;
+            },
+        },
+        methods: {
+            getCoinsToSell(){
+                socket.emit('getCoinsToSell', {}, (error, arrWithObjs) => {
+                    if (error) {
+                        return null
+                    } else {
+                        this.coinsToSell = [];
+                        this.coinsToSell = arrWithObjs;
+                        this.coinsArr = arrWithObjs;
+                    }
+                })
+            },
+            sortByRegion(region){
+                if (this.sortingBy !== region) {
+                    if (this.sortingBy === 'none') {
+                        this.coinsArr = this.coinsToSell;
+                    }
+                    this.coinsToSell = [];
+                    for (let i = 0; i < this.coinsArr.length; i++) {
+                        if (this.coinsArr[i].region === region) this.coinsToSell.push(this.coinsArr[i]);
+                    }
+                    this.sortingBy = region;
+                }
+                else {
+                    this.sortingBy = 'none';
+                    this.getCoinsToSell();
+                }
+            },
+
+            buyCoins(){
+                let isChoosenEmpty = true;
+                this.coinsToSell.some(function (coin) {
+                    if (coin.isChoosen) {
+                        isChoosenEmpty = false;
+                        return false;
+                    }
+                });
+                if(isChoosenEmpty) return;
+                Swal.fire({
+                    title: "<%=_lt.get('Are you sure delete this')%>",
+                    html:
+                        `<input id="name" placeholder="<%= _lt.get('Name')%>">` +
+                        `<input id="surname" placeholder="<%= _lt.get('Surname')%>">` +
+                        `<input id="number" placeholder="<%= _lt.get('Phone')%>">` +
+                        `<input id="email" placeholder="<%= _lt.get('Email')%>">`,
+                    focusConfirm: false,
+                    showCancelButton: true,
+                    confirmButtonText: "<%=_lt.get('Buy')%>",
+                    showLoaderOnConfirm: true,
+                    preConfirm: () => {
+                        let nameText = document.getElementById('name').value;
+                        let surnameText = document.getElementById('surname').value;
+                        let phoneText = document.getElementById('number').value;
+                        let emailText = document.getElementById('email').value;
+
+                        if (nameText.length > 0 && surnameText.length > 0
+                        && phoneText.length > 0 && emailText.length > 0) {
+                            let coins = [];
+                            this.coinsToSell.forEach(function (coin) {
+                                if (coin.isChoosen) {
+                                    coins.push({
+                                        cityId: coin.cityId,
+                                        price: coin.price,
+                                        currency: coin.currency,
+                                    })
+                                }
+                            })
+                            let formValues = {
+                                firstName: nameText,
+                                lastName: surnameText,
+                                telNumber: phoneText,
+                                isCompany: false,
+                                clientIp: '<%=locals.realIp%>',
+                                email: emailText,
+                                coins: coins
+                            }
+
+                            if (formValues) {
+                                socket.emit('BuyCityCoin', formValues, (error, success) => {
+                                    if (error) Swal.fire(
+                                        "<%=_lt.get('Failed!')%>",
+                                        "<%=_lt.get('Error')%>" + ": " + error.toString(),
+                                        'error'
+                                    );
+                                    else
+                                        Swal.fire(
+                                            "<%=_lt.get('Success')%>" + '!',
+                                            "<%=_lt.get('Purchase information will')%>",
+                                            'success'
+                                        )
+                                });
+                            }
+                        }
+                        else return 'error';
+                    }
+                }).then((result) => {
+                    if (result.value === 'error'){
+                        Swal.fire(
+                            "<%=_lt.get('Failed!')%>",
+                            "<%=_lt.get('Not all fields')%>",
+                            'error',
+                        )
+                    }
+                });
+            }
+        },
+        mounted() {
+            tippy('.investor-my-market-coin-info', {
+                content: '<div style="text-align: left; margin-top:10px; margin-bottom:10px;"><strong><i class="icon-material-outline-language"></i> <%=_lt.get(`Population:`)%></strong> <span>11,000,000 <%=_lt.get(`people`)%></span><br>' +
+                    '<strong><i class="icon-material-outline-language"></i> <%=_lt.get(`Agglomeration:`)%></strong> <span>134,546,000 <%=_lt.get(`people`)%></span><br>' +
+                    '<strong><i class="icon-material-outline-language"></i> <%=_lt.get(`Basic income this country:`)%></strong> <span>50,000$</span></div>',
+                arrow: true,
+                placement: 'left',
+                theme: 'light',
+            })
+            tippy('.investor-market-sold-item-info', {
+                content: "<%=_lt.get('This coin reserved')%>",
+                arrow: true,
+                placement: 'right',
+                theme: 'light',
+            })
+            this.getCoinsToSell();
+        //     $('.investor-slick').slick({
+        //         arrows: false,
+        //         dots: true,
+        //         infinite: true,
+        //         speed: 500,
+        //         fade: true,
+        //         cssEase: 'linear'
+        // })
+
+        },
+
+    }))
+</script>

@@ -1,0 +1,338 @@
+<script>
+    var index = Vue.component('listing-companies', ({
+        name: 'listingCompanies',
+        template: `<%include listingCompanies.vue%>`,
+        data: function () {
+            return {
+                catalogOfCompanies: {},
+                onlyYourCity: false,
+                city: '',
+                countryCode: '',
+                countryName: '',
+                lat: 0,
+                long: 0,
+                zipCode: "0",
+                sortBy: '',
+                workOnSaturday: false,
+                workOnSunday: false,
+                onlyRegistered: false,
+                companiesPaginationArray: [],
+                catalogCompaniesPage: 1,
+                companies: [],
+                companiesStorageFiltered: [],
+                companiesStorage: [],
+                companiesPerPageCount: 10,
+                search: 0,
+                hourStart: 0,
+                hourEnd: 24,
+                notSearch: false
+            }
+        },
+        computed: {
+            clientGeoObj: function () {
+                let obj = {
+                    onlyYourCity: this.onlyYourCity,
+                    city: this.city,
+                    countryCode: this.countryCode,
+                    countryName: this.countryName,
+                    lat: this.lat,
+                    long: this.long,
+                    zipCode: this.zipCode
+                }
+                return obj;
+            },
+        },
+
+        created() {
+        },
+
+
+        watch: {
+
+        },
+        methods: {
+            goToProfile: function (company) {
+                if (company.userId) {
+                    window.location.assign('#settings') // in future goTo '.../#profile/123'
+                }
+                else console.log ('This company not registered')
+            },
+            onlyYourCitySwitch: function () {
+                if (this.onlyYourCity === true) {
+                    this.search = 0;
+                    geoModel.returnGeoPosition()
+                        .then(geoObj => {
+                            this.city = geoObj.city;
+                            this.countryName = geoObj.country;
+                            this.countryCode = geoObj.countryCode;
+                            this.lat = geoObj.latitude;
+                            this.long = geoObj.longitude;
+                            this.zipCode = geoObj.zipcode;
+                            this.readCompanies();
+                        })
+                        .catch(e => {
+                            $('.loading').fadeOut('slow');
+                            console.log('Error: ', e)
+                            swal("<%=_lt.get('Error')%>", e.toString(), 'error');
+                            this.onlyYourCity = false;
+                        })
+                } else {
+                    this.readCompanies();
+                    this.lat = 0;
+                }
+            },
+            goToPagination(pageNum) {
+                if (pageNum <= 0 || pageNum > this.companiesPaginationArray.length) {
+                    return;
+                }
+                this.catalogCompaniesPage = pageNum;
+                this.updateDisplayedCompaniesPage();
+            },
+            updateDisplayedCompaniesPage () {
+                let countCompanies = 0;
+                for (var i = 0; i < this.catalogOfCompanies.length; i++) {
+                    for (var j = 0; j < this.catalogOfCompanies[i].exchanges.length; j++){
+                        countCompanies++;
+                    }
+                }
+                let pagesAmount = Math.ceil(countCompanies / this.companiesPerPageCount);
+
+                let pagesForPagination = [];
+                for (var i = 1; i <= pagesAmount; i++) {
+                    pagesForPagination.push(i);
+                }
+
+                this.companiesPaginationArray = pagesForPagination;
+                this.companies = [];
+
+                countCompanies = 0;
+                for (var i = 0; i < this.catalogOfCompanies.length; i++){
+                    var k = this.catalogOfCompanies[i].exchanges.length;
+                    if (countCompanies + k >= this.companiesPerPageCount * (this.catalogCompaniesPage - 1) && countCompanies < this.companiesPerPageCount * this.catalogCompaniesPage) {
+                        this.companies.push(JSON.parse(JSON.stringify(this.catalogOfCompanies[i]))); // entering the country
+                        this.companies[this.companies.length - 1].exchanges = []; // the number of companies in the last country is equal to 0
+                    }
+                    for (var t = 0; t < k; t++){
+                        if (countCompanies >= this.companiesPerPageCount * (this.catalogCompaniesPage - 1) && countCompanies < this.companiesPerPageCount * this.catalogCompaniesPage) {
+                            this.companies[this.companies.length - 1].exchanges.push(JSON.parse(JSON.stringify(this.catalogOfCompanies[i].exchanges[t]))); // enter the company, if it should be on this page
+                        }
+                        countCompanies = countCompanies + 1;
+                    }
+                }
+            },
+            parseLatLong(lat, long, callback) {
+                geoModel.decodeLatLong(lat, long)
+                    .then(geoObj => {
+                        this.city = geoObj.city;
+                        this.countryName = geoObj.country;
+                        this.countryCode = geoObj.countryCode;
+                        this.lat = lat;   // avoid 3rd. party side error (they can retrieve another lat)
+                        this.long = long;
+                        this.zipCode = geoObj.zipcode;
+                        callback(null, 'success');
+                    })
+                    .catch(e => {
+                        console.log('error parse lat:', e)
+                        callback(e, null);
+                    })
+            },
+            changeCompanySorting: function () {
+                if (this.sortBy === 'countryAZ') {
+                    this.sortByCountryAZ();
+                } else if (this.sortBy === 'countryZA') {
+                    this.sortByCountryZA();
+                }
+            },
+            sortByCountryAZ: function () {
+                let newArr = this.catalogOfCompanies.slice(0);
+                newArr.sort(function (a, b) {
+                    if (a.country_name > b.country_name) {
+                        return 1;
+                    }
+                    if (a.country_name < b.country_name) {
+                        return -1;
+                    }
+                    return 0;
+                });
+
+                this.catalogOfCompanies = newArr;
+            },
+            sortByCountryZA: function () {
+                let newArr = this.catalogOfCompanies.slice(0);
+                newArr.sort(function (a, b) {
+                    if (a.country_name < b.country_name) {
+                        return 1;
+                    }
+                    if (a.country_name > b.country_name) {
+                        return -1;
+                    }
+                    return 0;
+                });
+
+                this.catalogOfCompanies = newArr;
+            },
+            readByDefault: function () {
+                this.onlyYourCity = false;
+                this.city = '';
+                this.countryCode = '';
+                this.countryName = '';
+                this.lat = 0;
+                this.long = 0;
+                this.zipCode = "0";
+                this.sortBy = '';
+                this.workOnSaturday = false;
+                this.workOnSunday = false;
+                this.onlyRegistered = false;
+                this.search = 0;
+                socket.emit('getCatalogOfExchanges', (error, catalog) => {
+                    if (error) {
+                        swal('<%=_lt.get('Error')%>', error, 'error');
+                    }
+                    else {
+                        this.catalogOfCompanies = catalog;
+                        this.catalogCompaniesPage = 1;
+                        this.sortByCountryAZ();
+                        this.updateDisplayedCompaniesPage();
+                        $('#country-not-found-c').css('display', 'none');
+                        $('#city-not-found-c').css('display', 'none');
+                        $('#no-companies').css('display', 'none');
+                        $('#no-companies-by-filter').css('display', 'none');
+                    }
+                })
+            },
+            sliderChange: function () {
+                this.readCompanies();
+                $('#buttonHourWork').css('display', 'none');
+            },
+            readCompanies: function (notFoundInCity = false, callback) {
+                let searchBy;
+
+                if (notFoundInCity === true) {
+                    searchBy = 'byCountry';
+                } else if (this.lat !== 0 || this.onlyYourCity === true) {
+                    searchBy = 'byCity';
+                } else {
+                    searchBy = 'byDefault';
+                }
+
+                let obj = {
+                    geoObj: this.clientGeoObj,
+                    searchBy: searchBy,
+                    workOnSaturday: this.workOnSaturday,
+                    workOnSunday: this.workOnSunday,
+                    onlyRegistered: this.onlyRegistered,
+                    workHourStart: this.hourStart,
+                    workHourEnd: this.hourEnd
+                };
+
+                socket.emit('readCompanies', obj, (error, responseArr) => {
+                    if (error) {
+                        console.log('readCompanies error:', error)
+                        if (error.toString().includes('Cannot read property \'cityId\' of undefined')) {
+                            $('#city-not-found-c').css('display', 'block !important');
+                            $('#country-not-found-c').css('display', 'none');
+                            $('#no-companies-by-filter').css('display', 'none');
+                            $('#no-companies').css('display', 'none');
+                            this.onlyYourCity = false;
+                            this.readCompanies(true, callback);
+                        }
+                        else {
+                            swal('Error', error, 'error');
+                            $('.loading').fadeOut('slow');
+                            if (callback) {
+                                callback(error, null)
+                            }
+                        }
+                    } else {
+                        if (responseArr.length === 0) {
+
+                            if (obj.searchBy === 'byCity') { // search in city return empty arr
+                                $('#country-not-found-c').css('display', 'none');
+                                $('#city-not-found-c').css('display', 'block');
+                                $('#no-companies').css('display', 'none');
+                                $('#no-companies-by-filter').css('display', 'none');
+                                this.onlyYourCity = false;
+                                this.search++;
+                                this.readCompanies(true, callback);
+                            }
+                            else if (obj.searchBy === 'byCountry') { // search in country return empty arr
+                                $('#country-not-found-c').css('display', 'block');
+                                $('#city-not-found-c').css('display', 'none');
+                                $('#no-companies').css('display', 'none');
+                                $('#no-companies-by-filter').css('display', 'none');
+                                this.lat = 0;
+                                this.search++;
+                                this.readCompanies(true, callback);
+                            }
+                            else { // search by default return empty arr
+                                $('#country-not-found-c').css('display', 'none');
+                                $('#city-not-found-c').css('display', 'none');
+                                $('#no-companies').css('display', 'block');
+                                $('#no-companies-by-filter').css('display', 'none');
+                                $('.loading').fadeOut('slow');
+                                this.search++;
+                                console.log('Error: search offer by default return empty array' + searchBy);
+                                if (callback) {
+                                    callback(new Error('search offer by default return empty array'), null);
+                                }
+                            }
+                        }
+                        else {
+                            if (this.notSearch === false){
+                                $('#country-not-found-c').css('display', 'none');
+                                $('#city-not-found-c').css('display', 'none');
+                                $('#no-companies').css('display', 'none');
+                                $('#no-companies-by-filter').css('display', 'none');
+                            }
+                            this.notSearch = false;
+                            this.catalogOfCompanies = responseArr;
+                            this.catalogCompaniesPage = 1;
+                            this.sortByCountryAZ();
+                            this.updateDisplayedCompaniesPage();
+
+                            $('.loading').fadeOut('slow');
+
+                            if (this.onlyYourCity === true){
+                                $("#autocomplete-listing-companies").val(this.city);
+                            }
+
+                            if (callback) {
+                                callback(null, 'all good')
+                            }
+                        }
+                    }
+                })
+            }
+        },
+
+        mounted() {
+            $('.selectpicker').selectpicker('refresh');
+            $('.selectListingOff').selectpicker();
+
+            if (window.autocomplete) {
+                window.autocomplete = null;
+            }
+
+            if (window.google) {
+                window.google = null;
+            }
+
+            this.readByDefault();
+
+            $('#sliderHoursWork').slider({
+                min: 0,
+                max: 24,
+                step: 1,
+                value: [0, 24],
+                formatter: function (value) {
+                    return ThousandSeparator(parseFloat(value[0])) + ':00' + " - " + ThousandSeparator(parseFloat(value[1])) + ':00';
+                }
+            }).on('slideStop', (newArrVal) => {
+                $('#buttonHourWork').css('display', 'block');
+                this.hourStart =  newArrVal.value[0];
+                this.hourEnd = newArrVal.value[1];
+            });
+
+        }
+    }));
+</script>

@@ -1,0 +1,255 @@
+<script>
+
+    var dealsList = Vue.component('deals', ({
+        name: 'deals',
+        props: ['userObj', 'userDeals', 'cryptoFiatRatesArr', 'dealNotifications'],
+        template: `<% include deals.vue %>`,
+        data: function () {
+            return {
+                translate: {
+                    estimatePrice: "<%=_lt.get('Estimated price one coin')%>",
+                    marketPriceDescr: "<%=_lt.get('Price. Choose e.g.')%>"
+                },
+                bootStrapSelectLink: { // fucking overhead
+                    crypto: '',
+                    currency: '',
+                    percent: '',
+                    yourCrypto: ''
+                },
+                neededAmount: 0,
+                activeDealId: 0,
+                choosedDeal: null,
+                messagesArr: [],
+                actualText: '',
+                reviewObj: {
+                    isOpen: false,
+                    stars: 0,
+                    comment: ''
+                }
+            }
+        },
+        methods: {
+            writeReview() {
+            this.reviewObj.isOpen = true;
+
+            },
+            submitReview() {
+                if (this.reviewObj.stars === 0) {
+                    swal("<%=_lt.get('Please mark the stars')%>")
+                    return;
+                }
+                let obj = {
+                    uHash : Cookies.get('uHashL'),
+                    dealId: this.choosedDeal.id,
+                    stars: this.reviewObj.stars,
+                    comment: this.reviewObj.comment
+                }
+
+                socket.emit('reviewDeal', obj, (error, response) => {
+                    if (error) {
+                        swal("<%=_lt.get('Error')%>", error, 'error')
+                    } else {
+                        swal("<%=_lt.get('Success')%>", "<%=_lt.get('Your review has been success')%>", 'success')
+                            .then(okK => {
+                                this.reviewObj.isOpen = false;
+                                this.reviewObj.stars = 0;
+                                this.reviewObj.comment = ''
+                            })
+                    }
+                })
+            },
+            cancelDeal() {
+                let obj = {
+                    uHash: Cookies.get('uHashL'),
+                    dealObj : this.choosedDeal
+                }
+
+                socket.emit('cancelDeal', obj, (error, role) => {
+                    if (error) {
+                        swal("<%=_lt.get('Error')%>", error, 'error')
+                    } else {
+                        console.log('cancelDeal success', role)
+                        this.choosedDeal.closedDeal = 1;
+                        this.choosedDeal.closedByWhoId = this.userObj.id;
+                        this.choosedDeal.closedByWhoRole = role;
+                        this.$parent.routing.userDeals.forEach(oneDeal => {
+                            if (oneDeal.id === obj.dealObj.id) {
+                                oneDeal.closedDeal = 1;
+                                oneDeal.closedByWhoId = this.userObj.id;
+                                oneDeal.closedByWhoRole = role;
+                            }
+                        })
+                        swal("<%=_lt.get('Successfully canceled')%>")
+                    }
+                })
+            },
+            setDealAsComplete() {
+                let obj = {
+                    uHash: Cookies.get('uHashL'),
+                    dealObj : this.choosedDeal
+                }
+
+                socket.emit('setDealAsComplete', obj, (error, responseObj) => {
+                    if (error) {
+                        swal("<%=_lt.get('Error')%>", error, 'error')
+                    } else {
+                        console.log('responseObj', responseObj)
+                        this.choosedDeal.paidDate = responseObj.paidDate;
+                        this.choosedDeal.paidDateF = responseObj.paidDateF;
+
+                        this.$parent.routing.userDeals.forEach(oneDeal => {
+                            if (oneDeal.id === obj.dealObj.id) {
+                                oneDeal.paidDate = responseObj.paidDate;
+                                oneDeal.paidDateF = responseObj.paidDateF;
+
+                            }
+                        })
+                        swal("<%=_lt.get('Congratulation!')%>", "<%=_lt.get('You have successfully noted')%>", 'success')
+                    }
+                })
+
+            },
+            setDealObj(dealObj) {
+                this.choosedDeal = dealObj
+                let obj = {
+                    dealId: dealObj.id,
+                    uHash: Cookies.get('uHashL')
+                }
+                if (this.dealNotifications.includes(dealObj.id)){
+                    this.dealNotifications.remove(dealObj.id);
+                }
+                socket.emit('loadDealAndMessages', obj, (error, response) => {
+                    if (error) {
+                        console.log('error', error)
+                        swal("<%=_lt.get('Error')%>", "<%=_lt.get('Error during reading mes')%>", 'error')
+                    } else {
+                        console.log('loadDealAndMessages response', response)
+                        this.messagesArr = [];
+                        response.replyArr.forEach(oneMessage => {
+                            var message = JSON.parse(oneMessage);
+                            if (message.userId === this.userObj.id){
+                                message.avatarPath = this.userObj.avatarPath;
+                                message.userName = this.userObj.name + ' ' + this.userObj.surname;
+                            } else {
+                                message.avatarPath = response.dealObj.user.avatarPath;
+                                message.userName = response.dealObj.user.name + ' ' + response.dealObj.user.surname;
+                            }
+                            console.log(message);
+                            this.messagesArr.push(message)
+                        })
+                        console.log(response.replyArr);
+                    }
+                })
+            },
+            sendMessage() {
+                if (this.actualText.length > 0) {
+                    if (this.choosedDeal.paidDate || this.choosedDeal.closedDeal === 1) {
+                        swal("<%=_lt.get('Error')%>", "<%=_lt.get('In the paid canceled deal')%>", 'error')
+                        return;
+                    }
+                    let passedText= this.actualText;
+                    this.actualText = '';
+                    socket.emit('pushMessageToDeal', {uHash: Cookies.get('uHashL'), message: passedText, dealId: this.choosedDeal.id}, (error, chatObj) => {
+                        if (error) {
+                            swal("<%=_lt.get('Error')%>", error, 'error')
+                        } else {
+                            console.log('chatObj', chatObj)
+                            this.messagesArr.push(chatObj)
+                        }
+                    })
+                }
+
+            }
+
+        },
+        watch: {
+
+        },
+        computed: {
+            dynamicExchangeRate() {
+                res = '0'
+                if(this.cryptoFiatRatesArr && this.choosedDeal) {
+
+                    this.cryptoFiatRatesArr.forEach((curr) => {
+                        if (curr.short_code === this.choosedDeal.sellingCurrencyObj.short_code) {
+                            if (this.choosedDeal.buyingCurrencyObj.short_code === 'USD') {
+                                console.log(curr.rateToUsd);
+                                res = curr.rateToUsd;
+                            } else if (this.choosedDeal.buyingCurrencyObj.short_code === 'EUR') {
+                                console.log(curr.rateToEur);
+                                res = curr.rateToEur;
+                            } else if (this.choosedDeal.buyingCurrencyObj.short_code === 'RUB') {
+                                res = curr.rateToRub
+                            } else if (this.choosedDeal.buyingCurrencyObj.short_code === 'CZK') {
+                                res = curr.rateToCzk
+                            } else if (this.choosedDeal.buyingCurrencyObj.short_code === 'NZD') {
+                                res = curr.rateToNzd
+                            } else if (this.choosedDeal.buyingCurrencyObj.short_code === 'AUD') {
+                                res = curr.rateToAud
+                            }
+                        }
+                    })
+                }
+                $('#priceOne').bind('DOMSubtreeModified',function(){
+                    console.log('price one deal change!');
+                    //$('#priceOne').animate({ opacity: 0 }, 200).animate({ opacity: 1}, 200);
+                    $('#priceOne').stop().css('opacity', '0').animate({ opacity: 1 }, 200);
+                });
+                return res;
+            }
+        },
+        mounted() {
+            socket.on('message', (mes) => {
+                this.messagesArr.push(mes)
+            })
+
+            starRating('.star-rating');
+           // $('select').selectpicker();
+
+            // Link to Register Tab
+            $('.register-tab').on('click', function (event) {
+                event.preventDefault();
+                $(".popup-tab-content").hide();
+                $("#register.popup-tab-content").show();
+                $("body").find('.popup-tabs-nav a[href="#register"]').parent("li").click();
+            });
+
+            $('.popup-with-zoom-anim').magnificPopup({
+                type: 'inline',
+
+                fixedContentPos: false,
+                fixedBgPos: true,
+
+                overflowY: 'auto',
+
+                closeBtnInside: true,
+                preloader: false,
+
+                midClick: true,
+                removalDelay: 300,
+                mainClass: 'my-mfp-zoom-in'
+            });
+
+            /*--------------------------------------------------*/
+           	/*  Ripple Effect
+           	/*--------------------------------------------------*/
+           	// $('.ripple-effect, .ripple-effect-dark').on('click', function(e) {
+           	// 	var rippleDiv = $('<span class="ripple-overlay">'),
+           	// 		rippleOffset = $(this).offset(),
+           	// 		rippleY = e.pageY - rippleOffset.top,
+           	// 		rippleX = e.pageX - rippleOffset.left;
+               //
+           	// 	rippleDiv.css({
+           	// 		top: rippleY - (rippleDiv.height() / 2),
+           	// 		left: rippleX - (rippleDiv.width() / 2),
+           	// 		// background: $(this).data("ripple-color");
+           	// 	}).appendTo($(this));
+               //
+           	// 	window.setTimeout(function() {
+           	// 		rippleDiv.remove();
+           	// 	}, 800);
+           	// });
+            console.log('inside mounted deals page')
+        }
+    }));
+</script>

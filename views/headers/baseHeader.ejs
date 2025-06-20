@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>LocalCrypto</title>
+    <meta name="robots" content="noindex" />
+    <link type='text/css' rel="stylesheet" href="/css/initial.css">
+    <script type='text/javascript' src='https://code.jquery.com/jquery-3.3.1.min.js'></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.4/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/js-cookie@2/src/js.cookie.min.js"></script>
+
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon.png">
+</head>
+
+<body>
+    <script>
+        var thisUrl = location.protocol + '//' + location.host;
+        var socket = io.connect(thisUrl);
+    </script>
+    <script src="/js/commonController.js"></script>
+
+<div id="sMenu">
+    <a class="mr10" href="/">Main page</a>
+    <a class="mr10"  href="/deals/">My deals <b id="dealsCount"><script>document.write(getDealCounts())</script></b></a>
+    <%
+     if (locals.userObligations && Array.isArray(locals.userObligations) && userObligations.length > 0) { %>
+    <a class="mr10"  href="/obligations/">Your obligations</a>
+    <% }
+      %>
+    <div class="menuProfile">
+        <%
+        var userName = 'z';
+        var welcomeProfile = `Hello. <a href="/profile/">Profile page</a>.`;    // 2 var., because XSS protection
+        var welcomeProfile2 = ``;
+        if (locals.userObj) {
+            if (userObj.name && userObj.name.length > 1) {
+                userName = userObj.name;
+                welcomeProfile = `Hello, ${userName}. `;
+                welcomeProfile2 = `<a class="mr10" href="/profile/">Your profile.</a>`;
+            } else {
+                userName = "Anonymous"+userObj.id;
+                welcomeProfile = `Hello, ${userName}, `;
+                welcomeProfile2 = `<a class="mr10" href="/profile/">change name?</a>`;
+            }
+        }
+        %>
+
+        <%= welcomeProfile %> <%- welcomeProfile2 %>
+        <a href="/login/">Login</a>
+    </div>
+
+</div>
+
